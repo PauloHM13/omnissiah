@@ -25,14 +25,14 @@ class HospitalPriceRepository:
             cur.execute(
                 """
                 INSERT INTO hospital_procedure_prices
-                  (hospital_id, procedure_id, price, start_date, note, active)
+                (hospital_id, procedure_id, price, start_date, note, active)
                 VALUES
-                  (%(hospital_id)s,
-                   %(procedure_id)s,
-                   NULLIF(%(price)s,'')::numeric,
-                   COALESCE(NULLIF(%(start_date)s,''), CURRENT_DATE)::date,
-                   NULLIF(%(note)s,''),
-                   COALESCE(%(active)s, TRUE))
+                (%(hospital_id)s,
+                %(procedure_id)s,
+                NULLIF(%(price)s,'')::numeric,
+                COALESCE(NULLIF(%(start_date)s,'')::date, CURRENT_DATE),
+                NULLIF(%(note)s,''),
+                COALESCE(%(active)s, TRUE))
                 RETURNING id;
                 """,
                 data,
