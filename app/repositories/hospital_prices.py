@@ -45,8 +45,10 @@ class HospitalPriceRepository:
                 VALUES
                   (%(hospital_id)s, %(procedure_id)s,
                    NULLIF(%(price)s,'')::numeric,
+                   COALESCE(NULLIF(%(start_date)s,'')::date, CURRENT_DATE),  -- << aqui o fallback
                    NULL, NULL, NULL, NULL,
-                   NULLIF(%(note)s,''), TRUE)
+                   NULLIF(%(note)s,''),
+                   COALESCE(%(active)s, TRUE))
                 RETURNING id;
                 """,
                 data,
