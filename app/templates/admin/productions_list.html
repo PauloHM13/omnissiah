@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>Produção (Admin)</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
+    .wrap{max-width:1200px;margin:0 auto}
+    fieldset{border:1px solid #ccc;padding:12px;margin-bottom:16px;border-radius:6px}
+    legend{font-weight:600}
+    label{display:block;margin:6px 0 4px}
+    input,select{padding:8px;box-sizing:border-box}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    table{border-collapse:collapse;width:100%}
+    th,td{border:1px solid #ddd;padding:8px}
+    th{background:#f7f7f7;text-align:left}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Produção (Admin)</h1>
+  <p><a href="{{ url_for('auth.dashboard') }}">Voltar</a></p>
+
+  <form method="get">
+    <fieldset>
+      <legend>Filtros</legend>
+      <div class="grid">
+        <div>
+          <label>Médico</label>
+          <select name="doctor_id">
+            <option value="">(todos)</option>
+            {% for d in doctors %}
+              <option value="{{ d.id }}" {{ 'selected' if sel_doctor==d.id else '' }}>
+                {{ d.full_name or d.username }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Hospital</label>
+          <select name="hospital_id">
+            <option value="">(todos)</option>
+            {% for h in hospitals %}
+              <option value="{{ h.id }}" {{ 'selected' if sel_hospital==h.id else '' }}>
+                {{ h.nickname or h.trade_name or h.corporate_name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Data de (YYYY-MM-DD)</label>
+          <input name="date_from" value="{{ date_from }}">
+        </div>
+        <div>
+          <label>Data até (YYYY-MM-DD)</label>
+          <input name="date_to" value="{{ date_to }}">
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <button type="submit">Aplicar</button>
+      </div>
+    </fieldset>
+  </form>
+
+  <table>
+    <tr>
+      <th>Data</th>
+      <th>Hospital</th>
+      <th>Médico</th>
+      <th>Procedimento</th>
+      <th>Qtd</th>
+      <th>Vlr Unit.</th>
+      <th>Total</th>
+      <th>Obs.</th>
+    </tr>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r.exec_date }}</td>
+        <td>{{ r.hospital_name }}</td>
+        <td>{{ r.doctor_name or r.username }}</td>
+        <td>{{ r.tuss_code }} — {{ r.procedure_name }}</td>
+        <td>{{ r.quantity }}</td>
+        <td>{{ '%.2f'|format(r.unit_price or 0) }}</td>
+        <td>{{ '%.2f'|format(r.total or 0) }}</td>
+        <td class="muted">{{ r.note or '' }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+</body>
+</html>

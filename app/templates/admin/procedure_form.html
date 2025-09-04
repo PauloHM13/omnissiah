@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-br"><head><meta charset="utf-8"><title>{{ 'Novo' if mode=='new' else 'Editar' }} Procedimento</title>
+<style>
+body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
+.wrap{max-width:800px;margin:0 auto}
+fieldset{border:1px solid #ccc;padding:16px;margin-bottom:18px;border-radius:6px}
+legend{font-weight:600;padding:0 6px}
+label{display:block;margin:6px 0 4px}
+input,select{width:100%;padding:8px;box-sizing:border-box}
+.ok{color:#2e7d32}.err{color:#b00020}
+</style></head>
+<body>
+<div class="wrap">
+  <h1>{{ 'Novo' if mode=='new' else 'Editar' }} Procedimento</h1>
+  <p><a href="{{ url_for('admin_procedures.list_procedures') }}">Voltar</a></p>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}<ul>{% for cat,msg in msgs %}<li class="{{ 'ok' if cat=='ok' else 'err' }}">{{ msg }}</li>{% endfor %}</ul>{% endif %}
+  {% endwith %}
+  {% if error %}<p class="err">{{ error }}</p>{% endif %}
+  {% if msg %}<p class="ok">{{ msg }}</p>{% endif %}
+
+  <form method="post">
+    <fieldset>
+      <legend>Dados do procedimento</legend>
+      <label>Código TUSS/SIGTAP</label>
+      <input name="tuss_code" value="{{ proc.tuss_code if proc else '' }}" required>
+      <label>Nome</label>
+      <input name="name" value="{{ proc.name if proc else '' }}" required>
+      <label>Unidade de cobrança</label>
+      {% set cu = proc.charge_unit if proc else '' %}
+      <select name="charge_unit" required>
+        <option value="unit"   {{ 'selected' if cu=='unit' else '' }}>unit</option>
+        <option value="hour"   {{ 'selected' if cu=='hour' else '' }}>hour</option>
+        <option value="day"    {{ 'selected' if cu=='day' else '' }}>day</option>
+        <option value="package"{{ 'selected' if cu=='package' else '' }}>package</option>
+      </select>
+      <label>Grupo</label>
+      <input name="grp" value="{{ proc.grp if proc else '' }}">
+      <label>Código interno (opcional)</label>
+      <input name="internal_code" value="{{ proc.internal_code if proc else '' }}">
+      <label>Valor SUS (referência)</label>
+      <input name="valor_sus" type="text"
+             value="{{ ('%.2f'|format(proc.valor_sus)) if (proc and proc.valor_sus is not none) else '' }}">
+      {% if mode=='edit' %}
+      <label><input type="checkbox" name="active" {{ 'checked' if proc.active else '' }}> Ativo</label>
+      {% endif %}
+    </fieldset>
+    <button type="submit">{{ 'Criar' if mode=='new' else 'Salvar' }}</button>
+  </form>
+</div>
+</body></html>

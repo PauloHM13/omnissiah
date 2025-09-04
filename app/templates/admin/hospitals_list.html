@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-br"><head><meta charset="utf-8"><title>Hospitais</title>
+<style>
+body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
+input,select{padding:8px}
+.table{border-collapse:collapse;width:100%}
+.table th,.table td{border:1px solid #ddd;padding:8px}
+.table th{background:#f7f7f7;text-align:left}
+.actions a, .actions form{display:inline-block;margin-right:8px}
+</style></head>
+<body>
+<h1>Hospitais</h1>
+<p><a href="{{ url_for('admin_hospitals.new_hospital') }}">+ Novo hospital</a> | <a href="{{ url_for('auth.dashboard') }}">Voltar</a></p>
+<form method="get" style="margin-bottom:12px">
+  <input name="q" value="{{ q or '' }}" placeholder="Buscar por nome ou CNPJ">
+  <button type="submit">Buscar</button>
+</form>
+<table class="table">
+  <tr>
+    <th>ID</th><th>Razão Social</th><th>Fantasia</th><th>CNPJ</th><th>Cidade/UF</th><th>Ações</th>
+  </tr>
+  {% for h in hospitals %}
+  <tr>
+    <td>{{ h.id }}</td>
+    <td>{{ h.corporate_name }}</td>
+    <td>{{ h.trade_name or '-' }}</td>
+    <td>{{ h.cnpj or '-' }}</td>
+    <td>{{ (h.city or '-') ~ '/' ~ (h.state or '-') }}</td>
+    <td class="actions">
+      <a href="{{ url_for('admin_hospitals.edit_hospital', hospital_id=h.id) }}">Editar</a>
+      <form method="post" action="#" onsubmit="return confirm('Excluir hospital? (não implementado)')"><button disabled>Excluir</button></form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+</body></html>

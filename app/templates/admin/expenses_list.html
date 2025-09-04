@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>Despesas (Admin)</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
+    .wrap{max-width:1100px;margin:0 auto}
+    fieldset{border:1px solid #ccc;padding:16px;margin-bottom:18px;border-radius:6px}
+    legend{font-weight:600;padding:0 6px}
+    label{display:block;margin:6px 0 4px}
+    input,select{padding:8px;box-sizing:border-box}
+    table{border-collapse:collapse;width:100%}
+    th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
+    th{background:#f7f7f7;text-align:left}
+    .actions{display:flex;gap:8px;align-items:center}
+    .ok{color:#2e7d32}.err{color:#b00020}.muted{color:#666}
+    th.amount, td.amount { text-align: right; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Despesas (Admin)</h1>
+  <p><a href="{{ url_for('auth.dashboard') }}">Voltar</a></p>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}<ul>{% for cat,msg in msgs %}<li class="{{ 'ok' if cat=='ok' else 'err' }}">{{ msg }}</li>{% endfor %}</ul>{% endif %}
+  {% endwith %}
+
+  <form method="get" action="{{ url_for('admin_expenses.list_all') }}">
+    <fieldset>
+      <legend>Filtros</legend>
+      <div style="display:grid;grid-template-columns:1fr 1fr 2fr 2fr;gap:12px">
+        <div>
+          <label>Data inicial</label>
+          <input type="date" name="f_date_from" value="{{ f_date_from }}">
+        </div>
+        <div>
+          <label>Data final</label>
+          <input type="date" name="f_date_to" value="{{ f_date_to }}">
+        </div>
+        <div>
+          <label>Cidade (contém)</label>
+          <input name="f_city" value="{{ f_city or '' }}">
+        </div>
+        <div>
+          <label>Médico</label>
+          <select name="f_doctor_id">
+            <option value="">(todos)</option>
+            {% for d in doctors %}
+              <option value="{{ d.id }}" {{ 'selected' if (f_doctor_id|string)==(d.id|string) else '' }}>
+                {{ d.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button type="submit">Filtrar</button>
+        <a href="{{ url_for('admin_expenses.list_all') }}">Limpar</a>
+      </div>
+    </fieldset>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Médico</th>
+        <th>Cidade</th>
+        <th class="amount">Valor (R$)</th>
+        <th>Descrição</th>
+        <th>Comprovantes</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if rows %}
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.request_date }}</td>
+            <td>{{ r.doctor_name or r.username }}</td>
+            <td>{{ r.city }}</td>
+            <td class="amount">{{ ('%.2f'|format(r.amount or 0)).replace('.', ',') }}</td>
+            <td>{{ r.description or '' }}</td>
+            <td>
+              {% set fl = (files_map|default({})).get(r.id, []) %}
+              {% if fl %}
+                {% for f in fl %}
+                  <div><a href="{{ url_for('admin_expenses.download_any', expense_id=r.id, file_id=f.id) }}">{{ f.orig_name }}</a></div>
+                {% endfor %}
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="post"
+                    action="{{ url_for('admin_expenses.delete_any', expense_id=r.id) }}"
+                    onsubmit="return confirm('Excluir esta despesa?');">
+                <input type="hidden" name="f_date_from" value="{{ f_date_from or '' }}">
+                <input type="hidden" name="f_date_to" value="{{ f_date_to or '' }}">
+                <input type="hidden" name="f_city" value="{{ f_city or '' }}">
+                <input type="hidden" name="f_doctor_id" value="{{ f_doctor_id or '' }}">
+                <button type="submit">Excluir</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr><td colspan="7" class="muted">Nenhum registro para os filtros selecionados.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

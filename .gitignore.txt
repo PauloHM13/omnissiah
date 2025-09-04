@@ -1,0 +1,22 @@
+# Python / Flask
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Ambiente virtual
+venv/
+.env
+.venv/
+
+# VS Code
+.vscode/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Uploads (comprovantes etc.)
+uploads/
+data/

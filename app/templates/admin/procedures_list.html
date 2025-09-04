@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>Procedimentos</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
+    .table{border-collapse:collapse;width:100%}
+    .table th,.table td{border:1px solid #ddd;padding:8px}
+    .table th{background:#f7f7f7;text-align:left}
+    input,select{padding:8px}
+    .actions a, .actions form{display:inline-block;margin-right:8px}
+  </style>
+</head>
+<body>
+  <h1>Procedimentos</h1>
+  <p>
+    <a href="{{ url_for('admin_procedures.new_procedure') }}">+ Novo procedimento</a> |
+    <a href="{{ url_for('auth.dashboard') }}">Voltar</a>
+  </p>
+
+  <form method="get" style="margin-bottom:12px">
+    <input name="q" value="{{ q or '' }}" placeholder="Buscar por código/nome">
+    <button type="submit">Buscar</button>
+  </form>
+
+  <table class="table">
+    <tr>
+      <th>ID</th>
+      <th>Código</th>
+      <th>Nome</th>
+      <th>Unidade</th>
+      <th>Grupo</th>
+      <th>Valor SUS</th> <!-- NOVO -->
+      <th>Ativo</th>
+      <th>Ações</th>
+    </tr>
+    {% for p in procedures %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td>{{ p.tuss_code }}</td>
+      <td>{{ p.name }}</td>
+      <td>{{ p.charge_unit }}</td>
+      <td>{{ p.grp or '-' }}</td>
+      <td>
+        {% if p.valor_sus is not none %}
+          {{ '%.2f'|format(p.valor_sus) }}
+        {% else %}
+          -
+        {% endif %}
+      </td>
+      <td>{{ 'Sim' if p.active else 'Não' }}</td>
+      <td class="actions">
+        <a href="{{ url_for('admin_procedures.edit_procedure', procedure_id=p.id) }}">Editar</a>
+        <form method="post"
+              action="{{ url_for('admin_procedures.delete_procedure', procedure_id=p.id) }}"
+              style="display:inline"
+              onsubmit="return confirm('Excluir?')">
+          <button>Excluir</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>

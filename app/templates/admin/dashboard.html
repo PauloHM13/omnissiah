@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="pt-br"><head><meta charset="utf-8"><title>Admin</title></head>
+<body>
+<h1>Bem-vindo, {{ user }} (Admin)</h1>
+<ul>
+  <li><a href="{{ url_for('admin_users.list_users') }}">Gerenciar Usuários</a></li>
+  <li><a href="{{ url_for('admin_hospitals.list_hospitals') }}">Hospitais</a></li>
+  <li><a href="{{ url_for('admin_procedures.list_procedures') }}">Procedimentos</a></li>
+  <li><a href="{{ url_for('doctor_production.production_form') }}">Lançar produção</a></li>
+  <li><a href="{{ url_for('admin_productions.list_all') }}">Produção (relatório)</a></li>
+  <li><a href="{{ url_for('admin_expenses.list_all') }}">Despesas (todos os médicos)</a></li>
+
+</ul>
+<a href="{{ url_for('auth.logout') }}">Sair</a>
+</body></html>

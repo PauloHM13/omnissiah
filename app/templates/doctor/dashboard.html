@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard — Médico</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
+    ul{line-height:1.9}
+  </style>
+</head>
+<body>
+  <h1>Bem-vindo, Dr(a). {{ session.get('username') }}</h1>
+
+  <ul>
+    <li><a href="{{ url_for('doctor_production.production_form') }}">Lançar / Consultar Produção</a></li>
+    <li><a href="{{ url_for('doctor_expenses.form') }}">Solicitar / Consultar Despesas</a></li>
+    <li><a href="{{ url_for('auth.change_password') }}">Alterar minha senha</a></li>
+    <li><a href="{{ url_for('auth.logout') }}">Sair</a></li>
+  </ul>
+</body>
+</html>
