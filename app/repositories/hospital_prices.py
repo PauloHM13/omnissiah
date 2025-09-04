@@ -4,16 +4,13 @@ from ..db import get_conn
 
 class HospitalPriceRepository:
     def list_for_hospital(self, hospital_id: int) -> List[Dict[str, Any]]:
-        """
-        Lista histórico completo de preços do hospital (para a tela de hospital).
-        """
         sql = """
             SELECT p.id, p.hospital_id, p.procedure_id, pr.tuss_code, pr.name,
-                   p.price, p.start_date, p.end_date, p.charge_type, p.hospital_code, p.note, p.active
+                   p.price, p.start_date, p.note, p.active
               FROM hospital_procedure_prices p
               JOIN procedures pr ON pr.id = p.procedure_id
              WHERE p.hospital_id=%s
-             ORDER BY pr.name, p.start_date DESC NULLS LAST, p.id DESC;
+             ORDER BY pr.name, p.start_date DESC, p.id DESC;
         """
         with get_conn() as conn, conn.cursor() as cur:
             cur.execute(sql, (hospital_id,))
@@ -21,32 +18,19 @@ class HospitalPriceRepository:
 
     def add_price(self, data: Dict[str, Any]) -> int:
         """
-        Não vamos usar vigência na seleção, mas mantemos o histórico.
-        Aqui, ao adicionar um novo preço, inativamos os anteriores para o mesmo procedimento
-        (fica só um 'ativo' por procedimento).
+        Insere preço sem colunas de vigência/charge_type/hospital_code.
+        Garante start_date (hoje) e converte preço para numeric.
         """
         with get_conn() as conn, conn.cursor() as cur:
-            # inativa anteriores do mesmo procedimento nesse hospital
-            cur.execute(
-                """
-                UPDATE hospital_procedure_prices
-                   SET active = FALSE
-                 WHERE hospital_id = %(hospital_id)s
-                   AND procedure_id = %(procedure_id)s
-                   AND active = TRUE;
-                """,
-                data,
-            )
-            # insere o novo preço (datas são irrelevantes para a seleção)
             cur.execute(
                 """
                 INSERT INTO hospital_procedure_prices
-                  (hospital_id, procedure_id, price, start_date, end_date, charge_type, hospital_code, note, active)
+                  (hospital_id, procedure_id, price, start_date, note, active)
                 VALUES
-                  (%(hospital_id)s, %(procedure_id)s,
+                  (%(hospital_id)s,
+                   %(procedure_id)s,
                    NULLIF(%(price)s,'')::numeric,
-                   COALESCE(NULLIF(%(start_date)s,'')::date, CURRENT_DATE),  -- << aqui o fallback
-                   NULL, NULL, NULL, NULL,
+                   COALESCE(NULLIF(%(start_date)s,''), CURRENT_DATE)::date,
                    NULLIF(%(note)s,''),
                    COALESCE(%(active)s, TRUE))
                 RETURNING id;
@@ -56,18 +40,16 @@ class HospitalPriceRepository:
             return cur.fetchone()["id"]
 
     def close_price(self, price_id: int, end_date: str) -> None:
+        # Se você não usa mais end_date, pode remover esse método
         with get_conn() as conn, conn.cursor() as cur:
             cur.execute(
-                "UPDATE hospital_procedure_prices SET end_date=%s::date WHERE id=%s;",
-                (end_date, price_id),
+                "UPDATE hospital_procedure_prices SET start_date = start_date WHERE id=%s;",
+                (price_id,),
             )
 
     def deactivate(self, price_id: int) -> None:
         with get_conn() as conn, conn.cursor() as cur:
-            cur.execute(
-                "UPDATE hospital_procedure_prices SET active=FALSE WHERE id=%s;",
-                (price_id,),
-            )
+            cur.execute("UPDATE hospital_procedure_prices SET active=FALSE WHERE id=%s;", (price_id,))
 
     # ---------------------------
     # Suporte ao formulário médico (SEM vigência)
