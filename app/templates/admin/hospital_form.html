@@ -1,162 +1,364 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <title>{{ 'Novo' if mode=='new' else 'Editar' }} Hospital</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
-    .wrap{max-width:1000px;margin:0 auto}
-    fieldset{border:1px solid #ccc;padding:16px;margin-bottom:18px;border-radius:6px}
-    legend{font-weight:600;padding:0 6px}
-    label{display:block;margin:6px 0 4px}
-    input,select,textarea{width:100%;padding:8px;box-sizing:border-box}
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    .table{border-collapse:collapse;width:100%}
-    .table th,.table td{border:1px solid #ddd;padding:8px}
-    .table th{background:#f7f7f7;text-align:left}
-    .msg{margin:8px 0}
-    .ok{color:#2e7d32}.err{color:#b00020}
-  </style>
-</head>
-<body>
-<div class="wrap">
-  <h1>{{ 'Novo' if mode=='new' else 'Editar' }} Hospital</h1>
-  <p><a href="{{ url_for('admin_hospitals.list_hospitals') }}">Voltar</a></p>
+{% extends "base.html" %}
+{% block title %}{{ 'Novo' if mode=='new' else 'Editar' }} Hospital · MedOptic{% endblock %}
 
-  {% with msgs = get_flashed_messages(with_categories=true) %}
-    {% if msgs %}<ul>{% for cat,msg in msgs %}<li class="{{ 'ok' if cat=='ok' else 'err' }}">{{ msg }}</li>{% endfor %}</ul>{% endif %}
-  {% endwith %}
-  {% if error %}<p class="err msg">{{ error }}</p>{% endif %}
-  {% if msg %}<p class="ok msg">{{ msg }}</p>{% endif %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+  <div>
+    <h1 class="h4 mb-0">{{ 'Novo' if mode=='new' else 'Editar' }} Hospital</h1>
+    {% if mode == 'edit' %}
+      <div class="text-muted small">
+        {{ hospital.nickname or hospital.trade_name or hospital.corporate_name }}
+      </div>
+    {% endif %}
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('admin_hospitals.list_hospitals') }}">Voltar</a>
+</div>
 
-  <form method="post">
-    <fieldset>
-      <legend>Identificação</legend>
-      <div class="grid">
-        <div><label>Razão social</label><input name="corporate_name" value="{{ hospital.corporate_name if hospital else '' }}" required></div>
-        <div><label>Nome fantasia</label><input name="trade_name" value="{{ hospital.trade_name if hospital else '' }}"></div>
-        <div><label>Apelido (uso interno)</label>
-          <input name="nickname" value="{{ hospital.nickname if hospital else '' }}">
+<form method="post" class="mb-4">
+  <div class="row g-3">
+    <!-- Identificação -->
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <strong>Identificação</strong>
         </div>
-        <div><label>CNPJ</label><input name="cnpj" value="{{ hospital.cnpj if hospital else '' }}"></div>
-        <div><label>IE</label><input name="state_reg" value="{{ hospital.state_reg if hospital else '' }}"></div>
-        <div><label>IM</label><input name="city_reg" value="{{ hospital.city_reg if hospital else '' }}"></div>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Endereço</legend>
-      <div class="grid">
-        <div><label>CEP</label><input name="cep" value="{{ hospital.cep if hospital else '' }}"></div>
-        <div><label>Número</label><input name="number" value="{{ hospital.number if hospital else '' }}"></div>
-        <div style="grid-column:1/3"><label>Logradouro</label><input name="street" value="{{ hospital.street if hospital else '' }}"></div>
-        <div><label>Complemento</label><input name="complement" value="{{ hospital.complement if hospital else '' }}"></div>
-        <div><label>Bairro</label><input name="district" value="{{ hospital.district if hospital else '' }}"></div>
-        <div><label>Cidade</label><input name="city" value="{{ hospital.city if hospital else '' }}"></div>
-        <div><label>UF</label><input name="state" maxlength="2" value="{{ hospital.state if hospital else '' }}"></div>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Contatos</legend>
-      <div class="grid">
-        <div><label>Tel.</label><input name="phone" value="{{ hospital.phone if hospital else '' }}"></div>
-        <div><label>E-mail</label><input name="email" value="{{ hospital.email if hospital else '' }}"></div>
-        <div><label>Resp. Contrato (nome)</label><input name="contract_contact_name" value="{{ hospital.contract_contact_name if hospital else '' }}"></div>
-        <div><label>Resp. Contrato (e-mail)</label><input name="contract_contact_email" value="{{ hospital.contract_contact_email if hospital else '' }}"></div>
-        <div><label>Resp. Contrato (tel.)</label><input name="contract_contact_phone" value="{{ hospital.contract_contact_phone if hospital else '' }}"></div>
-        <div><label>Resp. Faturamento (nome)</label><input name="billing_contact_name" value="{{ hospital.billing_contact_name if hospital else '' }}"></div>
-        <div><label>Resp. Faturamento (e-mail)</label><input name="billing_contact_email" value="{{ hospital.billing_contact_email if hospital else '' }}"></div>
-        <div><label>Resp. Faturamento (tel.)</label><input name="billing_contact_phone" value="{{ hospital.billing_contact_phone if hospital else '' }}"></div>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Dados bancários</legend>
-      <div class="grid">
-        <div><label>Banco</label><input name="bank_name" value="{{ hospital.bank_name if hospital else '' }}"></div>
-        <div><label>Agência</label><input name="bank_agency" value="{{ hospital.bank_agency if hospital else '' }}"></div>
-        <div><label>Conta</label><input name="bank_account" value="{{ hospital.bank_account if hospital else '' }}"></div>
-        <div><label>Tipo</label><input name="bank_type" value="{{ hospital.bank_type if hospital else '' }}"></div>
-        <div><label>Favorecido</label><input name="bank_holder" value="{{ hospital.bank_holder if hospital else '' }}"></div>
-        <div><label>Doc. Favorecido</label><input name="bank_holder_doc" value="{{ hospital.bank_holder_doc if hospital else '' }}"></div>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Contrato & Faturamento</legend>
-      <div class="grid">
-        <div><label>Vigência início</label><input type="date" name="contract_start" value="{{ hospital.contract_start if hospital and hospital.contract_start else '' }}"></div>
-        <div><label>Vigência fim</label><input type="date" name="contract_end" value="{{ hospital.contract_end if hospital and hospital.contract_end else '' }}"></div>
-        <div><label>Prazo de pagamento</label><input name="pay_term" value="{{ hospital.pay_term if hospital else '' }}"></div>
-        <div><label>Regra de reajuste</label><input name="reajuste_rule" value="{{ hospital.reajuste_rule if hospital else '' }}"></div>
-        <div><label>Multa/Juros</label><input name="fine_interest" value="{{ hospital.fine_interest if hospital else '' }}"></div>
-        <div><label>Canal de envio da fatura</label><input name="invoice_channel" value="{{ hospital.invoice_channel if hospital else '' }}"></div>
-        <div><label>Prazo envio produção</label><input name="send_deadline" value="{{ hospital.send_deadline if hospital else '' }}"></div>
-        <div><label>Tipo de Nota (NF-e/RPS)</label><input name="nf_type" value="{{ hospital.nf_type if hospital else '' }}"></div>
-        <div><label>CFOP</label><input name="cfop" value="{{ hospital.cfop if hospital else '' }}"></div>
-        <div><label>CNAE</label><input name="cnae" value="{{ hospital.cnae if hospital else '' }}"></div>
-        <div><label>Cód. serviço municipal</label><input name="city_service_code" value="{{ hospital.city_service_code if hospital else '' }}"></div>
-      </div>
-      <label>Observações</label>
-      <textarea name="notes">{{ hospital.notes if hospital else '' }}</textarea>
-    </fieldset>
-
-    <button type="submit">{{ 'Criar hospital' if mode=='new' else 'Salvar' }}</button>
-  </form>
-
-  {% if mode=='edit' %}
-  <hr id="prices">
-  <h2>Tabela de Preços</h2>
-
-  <!-- Form simplificado: Procedimento, Preço e Observações -->
-  <form method="post" action="{{ url_for('admin_hospitals.add_price', hospital_id=hospital.id) }}">
-    <div class="grid">
-      <div>
-        <label>Procedimento</label>
-        <select name="procedure_id" required>
-          <option value="">-- selecione --</option>
-          {% for p in procedures %}
-            <option value="{{ p.id }}">{{ p.tuss_code }} — {{ p.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label>Preço (R$)</label>
-        <input name="price" required>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Razão social</label>
+              <input class="form-control" name="corporate_name" value="{{ hospital.corporate_name if hospital else '' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nome fantasia</label>
+              <input class="form-control" name="trade_name" value="{{ hospital.trade_name if hospital else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Apelido (uso interno)</label>
+              <input class="form-control" name="nickname" value="{{ hospital.nickname if hospital else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">CNPJ</label>
+              <input class="form-control" name="cnpj" value="{{ hospital.cnpj if hospital else '' }}">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">IE</label>
+              <input class="form-control" name="state_reg" value="{{ hospital.state_reg if hospital else '' }}">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">IM</label>
+              <input class="form-control" name="city_reg" value="{{ hospital.city_reg if hospital else '' }}">
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    <label>Observações</label>
-    <input name="note">
-    <button type="submit" style="margin-top:8px">Adicionar preço</button>
-  </form>
 
-  <table class="table" style="margin-top:16px">
-    <tr>
-      <th>Procedimento</th>
-      <th>Preço (R$)</th>
-      <th>Observações</th>
-      <th>Ativo</th>
-      <th>Ações</th>
-    </tr>
-    {% for r in prices %}
-      <tr>
-        <td>{{ r.tuss_code }} — {{ r.name }}</td>
-        <td>{{ '%.2f'|format(r.price) }}</td>
-        <td>{{ r.note or '-' }}</td>
-        <td>{{ 'Sim' if r.active else 'Não' }}</td>
-        <td>
-          <form method="post"
-                action="{{ url_for('admin_hospitals.deactivate_price', hospital_id=hospital.id, price_id=r.id) }}"
-                style="display:inline"
-                onsubmit="return confirm('Inativar preço?')">
-            <button type="submit">Inativar</button>
-          </form>
-        </td>
-      </tr>
-    {% endfor %}
-  </table>
-  {% endif %}
-</div>
-</body>
-</html>
+    <!-- Endereço -->
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <strong>Endereço</strong>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">CEP</label>
+              <input class="form-control" name="cep" value="{{ hospital.cep if hospital else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Número</label>
+              <input class="form-control" name="number" value="{{ hospital.number if hospital else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Logradouro</label>
+              <input class="form-control" name="street" value="{{ hospital.street if hospital else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Complemento</label>
+              <input class="form-control" name="complement" value="{{ hospital.complement if hospital else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Bairro</label>
+              <input class="form-control" name="district" value="{{ hospital.district if hospital else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Cidade</label>
+              <input class="form-control" name="city" value="{{ hospital.city if hospital else '' }}">
+            </div>
+            <div class="col-md-1">
+              <label class="form-label">UF</label>
+              <input class="form-control text-uppercase" maxlength="2" name="state" value="{{ hospital.state if hospital else '' }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contatos -->
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <strong>Contatos</strong>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Tel.</label>
+              <input class="form-control" name="phone" value="{{ hospital.phone if hospital else '' }}">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">E-mail</label>
+              <input class="form-control" name="email" value="{{ hospital.email if hospital else '' }}">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Resp. Contrato (nome)</label>
+              <input class="form-control" name="contract_contact_name" value="{{ hospital.contract_contact_name if hospital else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Resp. Contrato (e-mail)</label>
+              <input class="form-control" name="contract_contact_email" value="{{ hospital.contract_contact_email if hospital else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Resp. Contrato (tel.)</label>
+              <input class="form-control" name="contract_contact_phone" value="{{ hospital.contract_contact_phone if hospital else '' }}">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Resp. Faturamento (nome)</label>
+              <input class="form-control" name="billing_contact_name" value="{{ hospital.billing_contact_name if hospital else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Resp. Faturamento (e-mail)</label>
+              <input class="form-control" name="billing_contact_email" value="{{ hospital.billing_contact_email if hospital else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Resp. Faturamento (tel.)</label>
+              <input class="form-control" name="billing_contact_phone" value="{{ hospital.billing_contact_phone if hospital else '' }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dados bancários -->
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <strong>Dados bancários</strong>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Banco</label>
+              <input class="form-control" name="bank_name" value="{{ hospital.bank_name if hospital else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Agência</label>
+              <input class="form-control" name="bank_agency" value="{{ hospital.bank_agency if hospital else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Conta</label>
+              <input class="form-control" name="bank_account" value="{{ hospital.bank_account if hospital else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Tipo</label>
+              <input class="form-control" name="bank_type" value="{{ hospital.bank_type if hospital else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Favorecido</label>
+              <input class="form-control" name="bank_holder" value="{{ hospital.bank_holder if hospital else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Doc. Favorecido</label>
+              <input class="form-control" name="bank_holder_doc" value="{{ hospital.bank_holder_doc if hospital else '' }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contrato & Faturamento -->
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <strong>Contrato &amp; Faturamento</strong>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Vigência início</label>
+              <input type="date" class="form-control" name="contract_start" value="{{ hospital.contract_start if hospital and hospital.contract_start else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Vigência fim</label>
+              <input type="date" class="form-control" name="contract_end" value="{{ hospital.contract_end if hospital and hospital.contract_end else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Prazo de pagamento</label>
+              <input class="form-control" name="pay_term" value="{{ hospital.pay_term if hospital else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Regra de reajuste</label>
+              <input class="form-control" name="reajuste_rule" value="{{ hospital.reajuste_rule if hospital else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Multa/Juros</label>
+              <input class="form-control" name="fine_interest" value="{{ hospital.fine_interest if hospital else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Canal de envio da fatura</label>
+              <input class="form-control" name="invoice_channel" value="{{ hospital.invoice_channel if hospital else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Prazo envio produção</label>
+              <input class="form-control" name="send_deadline" value="{{ hospital.send_deadline if hospital else '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Tipo de Nota (NF-e/RPS)</label>
+              <input class="form-control" name="nf_type" value="{{ hospital.nf_type if hospital else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">CNAE</label>
+              <input class="form-control" name="cnae" value="{{ hospital.cnae if hospital else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Cód. serviço municipal</label>
+              <input class="form-control" name="city_service_code" value="{{ hospital.city_service_code if hospital else '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Observações</label>
+              <textarea class="form-control" name="notes" rows="3">{{ hospital.notes if hospital else '' }}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Salvar -->
+    <div class="col-12 d-flex justify-content-end">
+      <button class="btn btn-primary">Salvar</button>
+    </div>
+  </div>
+</form>
+
+{% if mode == 'edit' %}
+  <!-- Tabela de Preços -->
+  <div class="card shadow-sm" id="prices">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <strong>Tabela de Preços</strong>
+      <span class="text-muted small">Defina o valor atual e edite quando necessário.</span>
+    </div>
+    <div class="card-body">
+      <!-- Adição -->
+      <form class="row g-3 align-items-end" method="post"
+            action="{{ url_for('admin_hospitals.add_price', hospital_id=hospital.id) }}">
+        <div class="col-lg-5">
+          <label class="form-label">Procedimento</label>
+          <select class="form-select" name="procedure_id" required>
+            <option value="">-- selecione --</option>
+            {% for p in procedures %}
+              <option value="{{ p.id }}">{{ p.tuss_code }} — {{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-lg-3">
+          <label class="form-label">Preço (R$)</label>
+          <input class="form-control price-br" name="price" required placeholder="0,00" inputmode="decimal">
+        </div>
+        <div class="col-lg-3">
+          <label class="form-label">Observações</label>
+          <input class="form-control" name="note" placeholder="Opcional">
+        </div>
+        <div class="col-lg-1 d-grid">
+          <button class="btn btn-primary">Adicionar</button>
+        </div>
+      </form>
+
+      <!-- Lista -->
+      <div class="table-responsive mt-3">
+        <table class="table table-sm align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Procedimento</th>
+              <th class="text-end">Preço (R$)</th>
+              <th>Obs.</th>
+              <th class="text-center">Ativo</th>
+              <th class="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in prices %}
+              <tr>
+                <td class="text-wrap">
+                  <div class="fw-semibold">{{ r.tuss_code }} — {{ r.name }}</div>
+                </td>
+                <td class="text-end">{{ ('%.2f'|format(r.price)).replace('.', ',') }}</td>
+                <td class="text-muted small">{{ r.note or '—' }}</td>
+                <td class="text-center">
+                  <span class="badge bg-{{ 'success' if r.active else 'secondary' }}">{{ 'Ativo' if r.active else 'Inativo' }}</span>
+                </td>
+                <td class="text-center">
+                  <!-- editar (collapse) -->
+                  <button class="btn btn-sm btn-outline-primary"
+                          type="button"
+                          data-bs-toggle="collapse"
+                          data-bs-target="#rowEdit{{ r.id }}">
+                    Editar
+                  </button>
+                  <form class="d-inline"
+                        method="post"
+                        action="{{ url_for('admin_hospitals.deactivate_price', hospital_id=hospital.id, price_id=r.id) }}"
+                        onsubmit="return confirm('Inativar este preço?');">
+                    <button class="btn btn-sm btn-outline-danger">Inativar</button>
+                  </form>
+                </td>
+              </tr>
+              <tr class="collapse" id="rowEdit{{ r.id }}">
+                <td colspan="5">
+                  <form class="row g-2 align-items-end" method="post"
+                        action="{{ url_for('admin_hospitals.edit_price', hospital_id=hospital.id, price_id=r.id) }}">
+                    <div class="col-md-3">
+                      <label class="form-label">Preço (R$)</label>
+                      <input class="form-control price-br"
+                             name="price"
+                             value="{{ ('%.2f'|format(r.price)).replace('.', ',') }}"
+                             required>
+                    </div>
+                    <div class="col-md-7">
+                      <label class="form-label">Observações</label>
+                      <input class="form-control" name="note" value="{{ r.note or '' }}">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label">Status</label>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="active" id="ck{{ r.id }}" {% if r.active %}checked{% endif %}>
+                        <label class="form-check-label" for="ck{{ r.id }}">Ativo</label>
+                      </div>
+                    </div>
+                    <div class="col-12 d-flex justify-content-end">
+                      <button class="btn btn-primary">Salvar</button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" class="text-center text-muted py-4">Nenhum preço cadastrado.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Pequena ajudinha para vírgula decimal no campo de preço -->
+<script>
+  document.addEventListener('input', (e)=>{
+    if(e.target.classList.contains('price-br')){
+      // mantém dígitos e vírgula/ponto; troca ponto por vírgula na digitação
+      e.target.value = e.target.value.replace(/[^\d.,]/g,'').replace('.',',');
+    }
+  });
+</script>
+{% endblock %}

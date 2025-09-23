@@ -2,6 +2,8 @@
 from ..repositories.users import UserRepository
 from ..repositories.doctors import DoctorRepository
 from ..repositories.hospitals import HospitalRepository
+from passlib.hash import bcrypt
+from datetime import datetime, timezone
 
 class UserService:
     def __init__(self):
@@ -68,3 +70,15 @@ class UserService:
         all_ids = {h["id"] for h in self.hosp.list("")}
         clean = [hid for hid in hospital_ids if hid in all_ids]
         self.docs.set_hospitals(user_id, clean)
+
+    def user_must_change(self, user_id: int) -> bool:
+        u = self.users.by_id(user_id)
+        return bool(u and u.get("must_change_password"))
+
+    def set_password(self, user_id: int, new_plain: str, clear_flag: bool = True) -> bool:
+        # usa o mesmo hash do resto (pgcrypto)
+        return self.users.update_password(user_id, new_plain, clear_flag)
+    
+    def set_privacy_accepted(self, user_id: int) -> None:
+        # use UTC para consistência; ajuste se preferir usar timezone local
+        self.users.set_privacy_accepted(user_id, datetime.now(timezone.utc))

@@ -1,66 +1,72 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <title>Procedimentos</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
-    .table{border-collapse:collapse;width:100%}
-    .table th,.table td{border:1px solid #ddd;padding:8px}
-    .table th{background:#f7f7f7;text-align:left}
-    input,select{padding:8px}
-    .actions a, .actions form{display:inline-block;margin-right:8px}
-  </style>
-</head>
-<body>
-  <h1>Procedimentos</h1>
-  <p>
-    <a href="{{ url_for('admin_procedures.new_procedure') }}">+ Novo procedimento</a> |
-    <a href="{{ url_for('auth.dashboard') }}">Voltar</a>
-  </p>
+{% extends "base.html" %}
+{% block title %}Procedimentos · MedOptic{% endblock %}
 
-  <form method="get" style="margin-bottom:12px">
-    <input name="q" value="{{ q or '' }}" placeholder="Buscar por código/nome">
-    <button type="submit">Buscar</button>
-  </form>
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h4 mb-0">Procedimentos</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin_procedures.new_procedure') }}">
+    + Novo procedimento
+  </a>
+</div>
 
-  <table class="table">
-    <tr>
-      <th>ID</th>
-      <th>Código</th>
-      <th>Nome</th>
-      <th>Unidade</th>
-      <th>Grupo</th>
-      <th>Valor SUS</th> <!-- NOVO -->
-      <th>Ativo</th>
-      <th>Ações</th>
-    </tr>
-    {% for p in procedures %}
-    <tr>
-      <td>{{ p.id }}</td>
-      <td>{{ p.tuss_code }}</td>
-      <td>{{ p.name }}</td>
-      <td>{{ p.charge_unit }}</td>
-      <td>{{ p.grp or '-' }}</td>
-      <td>
-        {% if p.valor_sus is not none %}
-          {{ '%.2f'|format(p.valor_sus) }}
-        {% else %}
-          -
-        {% endif %}
-      </td>
-      <td>{{ 'Sim' if p.active else 'Não' }}</td>
-      <td class="actions">
-        <a href="{{ url_for('admin_procedures.edit_procedure', procedure_id=p.id) }}">Editar</a>
-        <form method="post"
-              action="{{ url_for('admin_procedures.delete_procedure', procedure_id=p.id) }}"
-              style="display:inline"
-              onsubmit="return confirm('Excluir?')">
-          <button>Excluir</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
-</body>
-</html>
+<form class="row g-2 align-items-end mb-3" method="get" action="{{ url_for('admin_procedures.list_procedures') }}">
+  <div class="col-12 col-md-6">
+    <label class="form-label">Buscar (código TUSS ou nome)</label>
+    <input class="form-control" name="q" value="{{ q or '' }}" placeholder="Ex.: 20103012 ou Colonoscopia">
+  </div>
+  <div class="col-12 col-md-3">
+    <label class="form-label">Status</label>
+    <select class="form-select" name="active">
+      <option value="">Todos</option>
+      <option value="1" {{ 'selected' if active == '1' else '' }}>Ativos</option>
+      <option value="0" {{ 'selected' if active == '0' else '' }}>Inativos</option>
+    </select>
+  </div>
+  <div class="col-12 col-md-3 d-flex gap-2">
+    <button class="btn btn-outline-secondary flex-fill">Filtrar</button>
+    <a class="btn btn-outline-dark" href="{{ url_for('admin_procedures.list_procedures') }}">Limpar</a>
+  </div>
+</form>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width:140px">TUSS</th>
+          <th>Nome</th>
+          <th style="width:180px">Unidade de cobrança</th>
+          <th style="width:110px">Status</th>
+          <th style="width:120px" class="text-end">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% if procedures %}
+        {% for p in procedures %}
+          <tr>
+            <td class="text-monospace">{{ p.tuss_code }}</td>
+            <td>{{ p.name }}</td>
+            <td><span class="text-muted">{{ p.charge_unit or '-' }}</span></td>
+            <td>
+              {% if p.active %}
+                <span class="badge text-bg-success">Ativo</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Inativo</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-primary"
+                 href="{{ url_for('admin_procedures.edit_procedure', procedure_id=p.id) }}">
+                Editar
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr><td colspan="5" class="text-muted p-4">Nenhum procedimento encontrado.</td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

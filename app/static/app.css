@@ -1,0 +1,7 @@
+:root{
+  --brand:#4f46e5; /* roxo azulado bonito */
+}
+.navbar .navbar-brand{ color:var(--brand); }
+.navbar .navbar-brand:hover{ color:#3e36c7; }
+.table thead th{ background:#f8f9fa; }
+.form-hint{ font-size:.85rem; color:#6c757d; }

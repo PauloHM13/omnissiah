@@ -1,36 +1,64 @@
-<!doctype html>
-<html lang="pt-br"><head><meta charset="utf-8"><title>Hospitais</title>
-<style>
-body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
-input,select{padding:8px}
-.table{border-collapse:collapse;width:100%}
-.table th,.table td{border:1px solid #ddd;padding:8px}
-.table th{background:#f7f7f7;text-align:left}
-.actions a, .actions form{display:inline-block;margin-right:8px}
-</style></head>
-<body>
-<h1>Hospitais</h1>
-<p><a href="{{ url_for('admin_hospitals.new_hospital') }}">+ Novo hospital</a> | <a href="{{ url_for('auth.dashboard') }}">Voltar</a></p>
-<form method="get" style="margin-bottom:12px">
-  <input name="q" value="{{ q or '' }}" placeholder="Buscar por nome ou CNPJ">
-  <button type="submit">Buscar</button>
+{% extends "base.html" %}
+{% block title %}Hospitais · MedOptic{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+  <h1 class="h4 mb-0">Hospitais</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin_hospitals.new_hospital') }}">+ Novo Hospital</a>
+</div>
+
+<form class="mb-3" method="get" action="{{ url_for('admin_hospitals.list_hospitals') }}">
+  <div class="input-group">
+    <input class="form-control" name="q" value="{{ q or '' }}" placeholder="Buscar por razão, fantasia, apelido ou CNPJ">
+    <button class="btn btn-outline-secondary">Buscar</button>
+    {% if q %}
+      <a class="btn btn-outline-secondary" href="{{ url_for('admin_hospitals.list_hospitals') }}">Limpar</a>
+    {% endif %}
+  </div>
 </form>
-<table class="table">
-  <tr>
-    <th>ID</th><th>Razão Social</th><th>Fantasia</th><th>CNPJ</th><th>Cidade/UF</th><th>Ações</th>
-  </tr>
-  {% for h in hospitals %}
-  <tr>
-    <td>{{ h.id }}</td>
-    <td>{{ h.corporate_name }}</td>
-    <td>{{ h.trade_name or '-' }}</td>
-    <td>{{ h.cnpj or '-' }}</td>
-    <td>{{ (h.city or '-') ~ '/' ~ (h.state or '-') }}</td>
-    <td class="actions">
-      <a href="{{ url_for('admin_hospitals.edit_hospital', hospital_id=h.id) }}">Editar</a>
-      <form method="post" action="#" onsubmit="return confirm('Excluir hospital? (não implementado)')"><button disabled>Excluir</button></form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
-</body></html>
+
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="text-nowrap">Apelido / Fantasia</th>
+            <th>Razão social</th>
+            <th class="text-nowrap">CNPJ</th>
+            <th>Local</th>
+            <th>Contato</th>
+            <th class="text-center text-nowrap" style="width:120px">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in hospitals %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ h.nickname or h.trade_name or '—' }}</div>
+                <div class="text-muted small">{{ h.trade_name or ' ' }}</div>
+              </td>
+              <td>{{ h.corporate_name }}</td>
+              <td class="text-nowrap">{{ h.cnpj or '—' }}</td>
+              <td class="text-muted small">
+                {{ h.city or '—' }}{% if h.state %}/{{ h.state }}{% endif %}
+              </td>
+              <td class="text-muted small">
+                {{ h.phone or '—' }}{% if h.email %} · {{ h.email }}{% endif %}
+              </td>
+              <td class="text-center">
+                <a class="btn btn-sm btn-outline-primary"
+                   href="{{ url_for('admin_hospitals.edit_hospital', hospital_id=h.id) }}">
+                  Editar
+                </a>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-4">Nenhum hospital encontrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,15 +1,176 @@
-<!doctype html>
-<html lang="pt-br"><head><meta charset="utf-8"><title>Admin</title></head>
-<body>
-<h1>Bem-vindo, {{ user }} (Admin)</h1>
-<ul>
-  <li><a href="{{ url_for('admin_users.list_users') }}">Gerenciar Usuários</a></li>
-  <li><a href="{{ url_for('admin_hospitals.list_hospitals') }}">Hospitais</a></li>
-  <li><a href="{{ url_for('admin_procedures.list_procedures') }}">Procedimentos</a></li>
-  <li><a href="{{ url_for('doctor_production.production_form') }}">Lançar produção</a></li>
-  <li><a href="{{ url_for('admin_productions.list_all') }}">Produção (relatório)</a></li>
-  <li><a href="{{ url_for('admin_expenses.list_all') }}">Despesas (todos os médicos)</a></li>
+{% extends "base_admin.html" %}
+{% block admin_title %}Dashboard{% endblock %}
 
-</ul>
-<a href="{{ url_for('auth.logout') }}">Sair</a>
-</body></html>
+{% block admin_content %}
+<h1 class="h4 mb-3">Bem-vindo, {{ user }} (Admin)</h1>
+
+<!-- FILTROS -->
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <form class="row g-2 align-items-end" method="get" action="{{ request.path }}">
+      <div class="col-6 col-md-3">
+        <label class="form-label">Data de</label>
+        <input type="date" class="form-control" name="date_from" value="{{ date_from or '' }}">
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label">Data até</label>
+        <input type="date" class="form-control" name="date_to" value="{{ date_to or '' }}">
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">Hospital</label>
+        <select class="form-select" name="hospital_id">
+          <option value="">(todos)</option>
+          {% for h in hospitals %}
+            <option value="{{ h.id }}"
+              {{ 'selected' if (sel_hospital|default(None)) == h.id else '' }}>
+              {{ h.nickname or h.trade_name or h.corporate_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">Médico</label>
+        <select class="form-select" name="doctor_id">
+          <option value="">(todos)</option>
+          {% for d in doctors %}
+            <option value="{{ d.id }}"
+              {{ 'selected' if (sel_doctor|default(None)) == d.id else '' }}>
+              {{ d.full_name or d.username }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label">Procedimento</label>
+        <select class="form-select" name="procedure_id">
+          <option value="">(todos)</option>
+          {% for p in procedures %}
+            <option value="{{ p.id }}"
+              {{ 'selected' if (sel_procedure|default(None)) == p.id else '' }}>
+              {{ p.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 d-flex gap-2 mt-2">
+        <button class="btn btn-primary">Aplicar</button>
+        <a class="btn btn-outline-secondary" href="{{ request.path }}">Limpar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3">
+  <div class="col-12 col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Hospitais cadastrados</div>
+        <div class="fs-3 fw-semibold">{{ totals.hospitals }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Médicos cadastrados</div>
+        <div class="fs-3 fw-semibold">{{ totals.doctors }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Procedimentos realizados (total)</div>
+        <div class="fs-3 fw-semibold">{{ totals.procedures }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráfico -->
+{% set periodo_txt -%}
+  {%- if date_from or date_to -%}
+    {{ (date_from or 'início') }} a {{ (date_to or 'hoje') }}
+  {%- else -%}
+    {{ year }}
+  {%- endif -%}
+{%- endset %}
+
+<div class="card shadow-sm mt-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h2 class="h6 mb-0">Procedimentos por mês — {{ periodo_txt }}</h2>
+    </div>
+    <canvas id="chartMonthly" height="110"></canvas>
+  </div>
+</div>
+
+<!-- Rankings -->
+<div class="row g-3 mt-1">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h6 mb-3">Ranking por médico (quantidade)</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr><th>Médico</th><th class="text-end">Qtd</th></tr>
+            </thead>
+            <tbody>
+            {% for r in top_doctors %}
+              <tr><td>{{ r.name }}</td><td class="text-end">{{ r.qty }}</td></tr>
+            {% else %}
+              <tr><td colspan="2" class="text-muted">Sem dados.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h6 mb-3">Ranking por unidade (quantidade)</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr><th>Unidade</th><th class="text-end">Qtd</th></tr>
+            </thead>
+            <tbody>
+            {% for r in top_hospitals %}
+              <tr><td>{{ r.name }}</td><td class="text-end">{{ r.qty }}</td></tr>
+            {% else %}
+              <tr><td colspan="2" class="text-muted">Sem dados.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const dataSeries = {{ monthly|tojson }};
+  const ctx = document.getElementById('chartMonthly');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{ data: dataSeries, label: 'Procedimentos', borderWidth: 1 }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+</script>
+{% endblock %}

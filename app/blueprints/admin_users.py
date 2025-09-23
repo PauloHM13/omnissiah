@@ -52,13 +52,17 @@ def new_user():
                 "district": (request.form.get("district") or "").strip(),
                 "city": (request.form.get("city") or "").strip(),
                 "state": (request.form.get("state") or "").strip().upper(),
-                # médico
+                # médico (PF)
                 "full_name": (request.form.get("full_name") or "").strip(),
                 "crm": (request.form.get("crm") or "").strip(),
                 "rqe": (request.form.get("rqe") or "").strip(),
                 "cpf": (request.form.get("cpf") or "").strip(),
                 "rg":  (request.form.get("rg")  or "").strip(),
                 "specialty": (request.form.get("specialty") or "").strip(),
+                # médico (PJ) — NOVO
+                "company_name": (request.form.get("company_name") or "").strip(),
+                "company_cnpj": (request.form.get("company_cnpj") or "").strip(),
+                "company_crm":  (request.form.get("company_crm")  or "").strip(),
             }
             try:
                 uid, tmp = svc.create_user(payload)
@@ -67,7 +71,7 @@ def new_user():
                     ids = request.form.getlist("hospital_ids")  # ["1","3",...]
                     sel_ids = [int(x) for x in ids if x.isdigit()]
                     svc.set_doctor_hospitals(uid, sel_ids)
-                    doc_hospital_ids = sel_ids  # para refletir na tela após criação
+                    doc_hospital_ids = sel_ids  # reflete na tela após criação
                 msg = f"Usuário criado: {username} | Senha provisória: {tmp}"
             except Exception as e:
                 error = f"Erro: {e}"
@@ -116,13 +120,17 @@ def edit_user(user_id: int):
             "district": (request.form.get("district") or "").strip(),
             "city": (request.form.get("city") or "").strip(),
             "state": (request.form.get("state") or "").strip().upper(),
-            # médico
+            # médico (PF)
             "full_name": (request.form.get("full_name") or "").strip(),
             "crm": (request.form.get("crm") or "").strip(),
             "rqe": (request.form.get("rqe") or "").strip(),
             "cpf": (request.form.get("cpf") or "").strip(),
             "rg":  (request.form.get("rg")  or "").strip(),
             "specialty": (request.form.get("specialty") or "").strip(),
+            # médico (PJ) — NOVO
+            "company_name": (request.form.get("company_name") or "").strip(),
+            "company_cnpj": (request.form.get("company_cnpj") or "").strip(),
+            "company_crm":  (request.form.get("company_crm")  or "").strip(),
         }
 
         if role not in ("admin", "doctor") or not username or "@" not in email:

@@ -51,6 +51,17 @@ class HospitalPriceRepository:
         with get_conn() as conn, conn.cursor() as cur:
             cur.execute("UPDATE hospital_procedure_prices SET active=FALSE WHERE id=%s;", (price_id,))
 
+    def update_price(self, price_id: int, price: str, note: str, active: bool) -> None:
+        sql = """
+        UPDATE hospital_procedure_prices
+           SET price = NULLIF(%(price)s,'')::numeric,
+               note  = NULLIF(%(note)s,''),
+               active = COALESCE(%(active)s, TRUE)
+         WHERE id = %(id)s;
+        """
+        with get_conn() as conn, conn.cursor() as cur:
+            cur.execute(sql, {"id": price_id, "price": price, "note": note, "active": active})
+
     # ---------------------------
     # Suporte ao formulário médico (SEM vigência)
     # ---------------------------

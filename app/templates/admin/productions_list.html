@@ -1,92 +1,188 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <title>Produção (Admin)</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
-    .wrap{max-width:1200px;margin:0 auto}
-    fieldset{border:1px solid #ccc;padding:12px;margin-bottom:16px;border-radius:6px}
-    legend{font-weight:600}
-    label{display:block;margin:6px 0 4px}
-    input,select{padding:8px;box-sizing:border-box}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    table{border-collapse:collapse;width:100%}
-    th,td{border:1px solid #ddd;padding:8px}
-    th{background:#f7f7f7;text-align:left}
-    .muted{color:#666}
-  </style>
-</head>
-<body>
-<div class="wrap">
-  <h1>Produção (Admin)</h1>
-  <p><a href="{{ url_for('auth.dashboard') }}">Voltar</a></p>
+{% extends "base.html" %}
+{% block title %}Produção (Admin) · MedOptic{% endblock %}
 
-  <form method="get">
-    <fieldset>
-      <legend>Filtros</legend>
-      <div class="grid">
-        <div>
-          <label>Médico</label>
-          <select name="doctor_id">
-            <option value="">(todos)</option>
-            {% for d in doctors %}
-              <option value="{{ d.id }}" {{ 'selected' if sel_doctor==d.id else '' }}>
-                {{ d.full_name or d.username }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label>Hospital</label>
-          <select name="hospital_id">
-            <option value="">(todos)</option>
-            {% for h in hospitals %}
-              <option value="{{ h.id }}" {{ 'selected' if sel_hospital==h.id else '' }}>
-                {{ h.nickname or h.trade_name or h.corporate_name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label>Data de (YYYY-MM-DD)</label>
-          <input name="date_from" value="{{ date_from }}">
-        </div>
-        <div>
-          <label>Data até (YYYY-MM-DD)</label>
-          <input name="date_to" value="{{ date_to }}">
-        </div>
-      </div>
-      <div style="margin-top:8px">
-        <button type="submit">Aplicar</button>
-      </div>
-    </fieldset>
-  </form>
+{% block content %}
 
-  <table>
-    <tr>
-      <th>Data</th>
-      <th>Hospital</th>
-      <th>Médico</th>
-      <th>Procedimento</th>
-      <th>Qtd</th>
-      <th>Vlr Unit.</th>
-      <th>Total</th>
-      <th>Obs.</th>
-    </tr>
-    {% for r in rows %}
-      <tr>
-        <td>{{ r.exec_date }}</td>
-        <td>{{ r.hospital_name }}</td>
-        <td>{{ r.doctor_name or r.username }}</td>
-        <td>{{ r.tuss_code }} — {{ r.procedure_name }}</td>
-        <td>{{ r.quantity }}</td>
-        <td>{{ '%.2f'|format(r.unit_price or 0) }}</td>
-        <td>{{ '%.2f'|format(r.total or 0) }}</td>
-        <td class="muted">{{ r.note or '' }}</td>
-      </tr>
-    {% endfor %}
-  </table>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Produção (Admin)</h1>
+  <a href="{{ url_for('auth.dashboard') }}" class="btn btn-outline-secondary btn-sm">Voltar</a>
 </div>
-</body>
-</html>
+
+<!-- FILTROS -->
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <form class="row g-2 align-items-end" method="get">
+      <div class="col-12 col-md-3">
+        <label class="form-label">Médico</label>
+        <select class="form-select" name="doctor_id">
+          <option value="">(todos)</option>
+          {% for d in doctors %}
+            <option value="{{ d.id }}" {{ 'selected' if sel_doctor==d.id else '' }}>
+              {{ d.full_name or d.username }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">Hospital</label>
+        <select class="form-select" name="hospital_id">
+          <option value="">(todos)</option>
+          {% for h in hospitals %}
+            <option value="{{ h.id }}" {{ 'selected' if sel_hospital==h.id else '' }}>
+              {{ h.nickname or h.trade_name or h.corporate_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label">Data de</label>
+        <input type="date" class="form-control" name="date_from" value="{{ date_from }}">
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label">Data até</label>
+        <input type="date" class="form-control" name="date_to" value="{{ date_to }}">
+      </div>
+
+      <div class="col-12 d-flex gap-2 mt-2">
+        <button class="btn btn-primary">Aplicar</button>
+        <a class="btn btn-outline-secondary" href="{{ request.path }}">Limpar</a>
+
+        <a class="btn btn-outline-success ms-auto"
+           href="{{ url_for('admin_productions.export_xlsx',
+                            doctor_id=sel_doctor or '',
+                            hospital_id=sel_hospital or '',
+                            date_from=date_from or '',
+                            date_to=date_to or '') }}">
+          Exportar Excel
+        </a>
+
+        <button type="button" class="btn btn-outline-dark" onclick="window.print()">Imprimir</button>
+
+        <!-- NOVO: Importar -->
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+          Importar Excel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- KPIs (calculados no template a partir de rows) -->
+{% set acc = namespace(qty=0, total=0) %}
+{% for r in rows %}
+  {% set acc.qty = acc.qty + (r.quantity or 0) %}
+  {% set acc.total = acc.total + (r.total or 0) %}
+{% endfor %}
+
+<div class="row g-3 mb-2">
+  <div class="col-12 col-md-3">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <div class="text-muted small">Total de lançamentos</div>
+      <div class="fs-3 fw-semibold">{{ rows|length }}</div>
+    </div></div>
+  </div>
+  <div class="col-12 col-md-3">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <div class="text-muted small">Quantidade (soma)</div>
+      <div class="fs-3 fw-semibold">{{ acc.qty }}</div>
+    </div></div>
+  </div>
+  <div class="col-12 col-md-3">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <div class="text-muted small">Valor total (R$)</div>
+      <div class="fs-3 fw-semibold">
+        {{ '{:,.2f}'.format(acc.total).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<!-- TABELA -->
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light position-sticky top-0">
+          <tr>
+            <th style="min-width:110px">Data</th>
+            <th>Hospital</th>
+            <th>Médico</th>
+            <th>Procedimento</th>
+            <th class="text-end">Qtd</th>
+            <th class="text-end">Vlr Unit. (R$)</th>
+            <th class="text-end">Total (R$)</th>
+            <th>Obs.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td>{{ r.exec_date }}</td>
+              <td>{{ r.hospital_name }}</td>
+              <td>{{ r.doctor_name or r.username }}</td>
+              <td>
+                {% if r.tuss_code %}<small class="text-muted">{{ r.tuss_code }}</small> — {% endif %}
+                {{ r.procedure_name }}
+              </td>
+              <td class="text-end">{{ r.quantity }}</td>
+              <td class="text-end">
+                {{ '{:,.2f}'.format(r.unit_price or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+              </td>
+              <td class="text-end">
+                {{ '{:,.2f}'.format(r.total or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+              </td>
+              <td class="text-muted">{{ r.note or '' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8" class="text-muted">Sem dados para o filtro.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Importar Excel -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" method="post" action="{{ url_for('admin_productions.import_excel') }}"
+          enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title" id="importModalLabel">Importar produção via Excel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2">
+          Baixe o modelo e preencha conforme instruções:
+          <a href="{{ url_for('admin_productions.download_template') }}">baixar modelo (.xlsx)</a>
+        </p>
+        <div class="mb-3">
+          <label class="form-label">Arquivo (.xlsx)</label>
+          <input type="file" class="form-control" name="file" accept=".xlsx,.xlsm,.xltx,.xltm" required>
+        </div>
+        <small class="text-muted">
+          Colunas: <code>data</code>, <code>hospital</code>, <code>medico</code>, <code>procedimento</code>,
+          <code>quantidade</code> (opcional), <code>valor_unitario</code> (opcional), <code>obs</code> (opcional).<br>
+          Hospital: usar <strong>apelido</strong> (nickname) ou ID. Médico: <strong>username</strong> (login) ou nome completo.
+          Procedimento: <strong>código TUSS</strong> (preferível) ou nome exato.
+          Se o valor unitário ficar em branco, o sistema tenta a tabela de preços do hospital.
+        </small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Importar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  @media print {
+    nav.navbar, .btn, footer.site-footer { display:none !important; }
+    .card { border:none; box-shadow:none; }
+    .table thead { background:#eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background:white !important; }
+  }
+</style>
+
+{% endblock %}

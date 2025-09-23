@@ -5,7 +5,7 @@ from ..db import get_conn
 class HospitalRepository:
     def list(self, q: str = "") -> List[Dict[str, Any]]:
         where = ""
-        params: list[Any] = []
+        params: List[Any] = []
         if q:
             where = (
                 "WHERE corporate_name ILIKE %s OR trade_name ILIKE %s "
@@ -28,6 +28,7 @@ class HospitalRepository:
             return cur.fetchone()
 
     def create(self, data: Dict[str, Any]) -> int:
+        # REMOVIDO: 'cfop'
         cols = [
             'corporate_name','trade_name','nickname','cnpj','state_reg','city_reg',
             'cep','street','number','complement','district','city','state',
@@ -36,7 +37,7 @@ class HospitalRepository:
             'billing_contact_name','billing_contact_email','billing_contact_phone',
             'bank_name','bank_agency','bank_account','bank_type','bank_holder','bank_holder_doc',
             'contract_start','contract_end','pay_term','reajuste_rule','fine_interest',
-            'invoice_channel','send_deadline','nf_type','cfop','cnae','city_service_code','notes'
+            'invoice_channel','send_deadline','nf_type','cnae','city_service_code','notes'
         ]
         date_cols = {'contract_start', 'contract_end'}
         placeholders = ",".join(
@@ -48,6 +49,7 @@ class HospitalRepository:
             return cur.fetchone()["id"]
 
     def update(self, hid: int, data: Dict[str, Any]) -> None:
+        # REMOVIDO: 'cfop'
         cols = [
             'corporate_name','trade_name','nickname','cnpj','state_reg','city_reg',
             'cep','street','number','complement','district','city','state',
@@ -56,7 +58,7 @@ class HospitalRepository:
             'billing_contact_name','billing_contact_email','billing_contact_phone',
             'bank_name','bank_agency','bank_account','bank_type','bank_holder','bank_holder_doc',
             'contract_start','contract_end','pay_term','reajuste_rule','fine_interest',
-            'invoice_channel','send_deadline','nf_type','cfop','cnae','city_service_code','notes'
+            'invoice_channel','send_deadline','nf_type','cnae','city_service_code','notes'
         ]
         date_cols = {'contract_start', 'contract_end'}
         set_clause = ",".join(

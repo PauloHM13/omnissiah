@@ -1,215 +1,241 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <title>Lançar Produção</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
-    .wrap{max-width:1000px;margin:0 auto}
-    fieldset{border:1px solid #ccc;padding:16px;margin-bottom:18px;border-radius:6px}
-    legend{font-weight:600;padding:0 6px}
-    label{display:block;margin:6px 0 4px}
-    input,select,textarea{padding:8px;box-sizing:border-box}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    table{border-collapse:collapse;width:100%}
-    th,td{border:1px solid #ddd;padding:8px}
-    th{background:#f7f7f7;text-align:left}
-    .actions{margin-top:10px;display:flex;gap:8px;align-items:center}
-    .ok{color:#2e7d32}.err{color:#b00020}
-    .muted{color:#666}
-  </style>
-  <script>
-    const AJAX_URL = "{{ url_for('doctor_production.ajax_procedures_by_hospital') }}";
+{% extends "base_doctor.html" %}
+{% block doctor_title %}Lançar Produção · MedOptic{% endblock %}
 
-    async function loadProcedures(){
-      const hid = document.querySelector('select[name="hospital_id"]').value;
-      if(!hid) return;
-      try{
-        const url = `${AJAX_URL}?hospital_id=${encodeURIComponent(hid)}`;
-        const res = await fetch(url,{headers:{'Accept':'application/json'}});
-        const data = await res.json();
-        if(!data.ok){ alert(data.error || "Erro ao carregar procedimentos"); return; }
-        document.querySelectorAll('select[name="procedure_id"]').forEach(sel=>{
-          const cur = sel.value;
-          sel.innerHTML = `<option value="">-- selecione --</option>`;
-          data.procedures.forEach(p=>{
-            const opt=document.createElement('option');
-            opt.value=p.id; opt.textContent=p.label;
-            sel.appendChild(opt);
-          });
-          if(cur && Array.from(sel.options).some(o=>o.value===cur)) sel.value=cur;
-        });
-      }catch(e){ console.error(e); alert("Falha ao carregar procedimentos."); }
-    }
+{% block doctor_content %}
 
-    function addRow(){
-      const tbody = document.getElementById('rows');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="width:55%">
-          <select name="procedure_id" required>
-            <option value="">-- selecione --</option>
-          </select>
-        </td>
-        <td style="width:15%"><input name="quantity" type="number" min="1" step="1" value="1" required></td>
-        <td><input name="note" placeholder="Observação (opcional)"></td>
-        <td style="width:10%"><button type="button" onclick="this.closest('tr').remove()">Remover</button></td>
-      `;
-      tbody.appendChild(tr);
-      loadProcedures();
-    }
+{# util para exibir datas como dd/mm/aaaa a partir de 'YYYY-MM-DD' #}
+{% macro brdate(s) -%}
+  {%- set x = (s|string) -%}
+  {%- if x and '-' in x and x|length >= 10 -%}
+    {{ x[8:10] }}/{{ x[5:7] }}/{{ x[0:4] }}
+  {%- else -%}
+    {{ x }}
+  {%- endif -%}
+{%- endmacro %}
 
-    function autoSubmitFilters(){
-      const f = document.getElementById('filterForm');
-      if(f) f.submit();
-    }
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Lançar Produção</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('auth.dashboard') }}">Voltar</a>
+</div>
 
-    document.addEventListener('DOMContentLoaded', function(){
-      document.querySelector('select[name="hospital_id"]').addEventListener('change', loadProcedures);
-      addRow();
-      document.getElementById('btnAdd').addEventListener('click', addRow);
-      loadProcedures();
-    });
-  </script>
-</head>
-<body>
-<div class="wrap">
-  <h1>Lançar Produção</h1>
-  <p><a href="{{ url_for('auth.dashboard') }}">Voltar</a></p>
+{% with msgs = get_flashed_messages(with_categories=true) %}
+  {% if msgs %}
+    {% for cat,msg in msgs %}
+      <div class="alert {{ 'alert-success' if cat=='ok' else 'alert-danger' }} py-2">{{ msg }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
-  {% with msgs = get_flashed_messages(with_categories=true) %}
-    {% if msgs %}<ul>{% for cat,msg in msgs %}<li class="{{ 'ok' if cat=='ok' else 'err' }}">{{ msg }}</li>{% endfor %}</ul>{% endif %}
-  {% endwith %}
-
-  <!-- Formulário de lançamento -->
-  <form method="post" action="{{ url_for('doctor_production.production_submit') }}">
-    <fieldset>
-      <legend>Dados principais</legend>
-      <div class="grid2">
-        <div>
-          <label>Unidade (hospital)</label>
-          <select name="hospital_id" required>
+<!-- FORM DE LANÇAMENTO -->
+<form method="post" action="{{ url_for('doctor_production.production_submit') }}" class="mb-3">
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Dados principais</h2>
+      <div class="row g-2">
+        <div class="col-12 col-md-6">
+          <label class="form-label">Unidade (hospital)</label>
+          <select class="form-select" name="hospital_id" required>
             <option value="">-- selecione --</option>
             {% for h in hospitals %}
               <option value="{{ h.id }}">{{ h.nickname or h.trade_name or h.corporate_name }}</option>
             {% endfor %}
           </select>
         </div>
-        <div>
-          <label>Data de execução</label>
-          <input type="date" name="exec_date" required>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Data de execução</label>
+          <input type="date" class="form-control" name="exec_date" required>
         </div>
       </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Procedimentos</legend>
-      <table>
-        <thead>
-          <tr><th>Procedimento</th><th>Quantidade</th><th>Observação</th><th></th></tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-      <div class="actions">
-        <button type="button" id="btnAdd">+ Adicionar procedimento</button>
-      </div>
-    </fieldset>
-
-    <div class="actions">
-      <button type="submit">Salvar produção</button>
     </div>
-  </form>
+  </div>
 
-  <!-- Histórico do médico com filtros -->
-  <hr>
-  <h2>Minhas produções</h2>
-  <form id="filterForm" method="get" action="{{ url_for('doctor_production.production_form') }}">
-    <fieldset>
-      <legend>Filtros</legend>
-      <div class="grid4">
-        <div>
-          <label>Unidade (hospital)</label>
-          <select name="f_hospital_id" onchange="autoSubmitFilters()">
-            <option value="">(todas)</option>
-            {% for h in hospitals %}
-              <option value="{{ h.id }}" {{ 'selected' if f_hospital_id==h.id else '' }}>
-                {{ h.nickname or h.trade_name or h.corporate_name }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label>Procedimento</label>
-          <select name="f_procedure_id">
-            <option value="">(todos)</option>
-            {% for p in filter_procedures %}
-              <option value="{{ p.procedure_id }}" {{ 'selected' if f_procedure_id==p.procedure_id else '' }}>
-                {{ p.tuss_code }} — {{ p.name }}
-              </option>
-            {% endfor %}
-          </select>
-          <div class="muted">{% if not f_hospital_id %}Selecione um hospital para listar procedimentos neste filtro.{% endif %}</div>
-        </div>
-        <div>
-          <label>Data inicial</label>
-          <input type="date" name="f_date_from" value="{{ f_date_from }}">
-        </div>
-        <div>
-          <label>Data final</label>
-          <input type="date" name="f_date_to" value="{{ f_date_to }}">
-        </div>
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h6 mb-0">Procedimentos</h2>
+        <button type="button" id="btnAdd" class="btn btn-outline-primary btn-sm">+ Adicionar procedimento</button>
       </div>
-      <div class="actions">
-        <button type="submit">Filtrar</button>
-        <a href="{{ url_for('doctor_production.production_form') }}">Limpar</a>
-      </div>
-    </fieldset>
-  </form>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Data</th>
-        <th>Hospital</th>
-        <th>Procedimento</th>
-        <th>Qtd</th>
-        <th>Vlr Unit.</th>
-        <th>Total</th>
-        <th>Obs.</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% if rows %}
-        {% for r in rows %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead class="table-light">
+            <tr>
+              <th style="width:55%">Procedimento</th>
+              <th style="width:15%">Quantidade</th>
+              <th>Observação</th>
+              <th style="width:10%"></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Salvar produção</button>
+    <a class="btn btn-outline-secondary" href="{{ url_for('doctor_production.production_form') }}">Limpar</a>
+  </div>
+</form>
+
+<!-- HISTÓRICO + FILTROS -->
+<hr class="my-4">
+<h2 class="h5 mb-3">Minhas produções</h2>
+
+<form id="filterForm" method="get" action="{{ url_for('doctor_production.production_form') }}" class="card shadow-sm mb-3">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-12 col-md-3">
+        <label class="form-label mb-1">Unidade (hospital)</label>
+        <select class="form-select" name="f_hospital_id" onchange="autoSubmitFilters()">
+          <option value="">(todas)</option>
+          {% for h in hospitals %}
+            <option value="{{ h.id }}" {{ 'selected' if f_hospital_id==h.id else '' }}>
+              {{ h.nickname or h.trade_name or h.corporate_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 col-md-5">
+        <label class="form-label mb-1">Procedimento</label>
+        <select class="form-select" name="f_procedure_id" {{ '' if f_hospital_id else 'disabled' }}>
+          <option value="">(todos)</option>
+          {% for p in filter_procedures %}
+            <option value="{{ p.procedure_id }}" {{ 'selected' if f_procedure_id==p.procedure_id else '' }}>
+              {{ p.name }}
+            </option>
+          {% endfor %}
+        </select>
+        {% if not f_hospital_id %}
+          <div class="form-text">Selecione um hospital para listar procedimentos neste filtro.</div>
+        {% endif %}
+      </div>
+
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1">Data inicial</label>
+        <input type="date" class="form-control" name="f_date_from" value="{{ f_date_from }}">
+      </div>
+
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1">Data final</label>
+        <input type="date" class="form-control" name="f_date_to" value="{{ f_date_to }}">
+      </div>
+
+      <div class="col-12 d-flex justify-content-end gap-2">
+        <button class="btn btn-primary">Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('doctor_production.production_form') }}">Limpar</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light">
           <tr>
-            <td>{{ r.exec_date }}</td>
-            <td>{{ r.hospital_name }}</td>
-            <td>{{ r.tuss_code }} — {{ r.procedure_name }}</td>
-            <td>{{ r.quantity }}</td>
-            <td>{{ '%.2f'|format(r.unit_price or 0) }}</td>
-            <td>{{ '%.2f'|format(r.total or 0) }}</td>
-            <td>{{ r.note or '' }}</td>
-            <td>
-              <form method="post"
-                    action="{{ url_for('doctor_production.delete_production', prod_id=r.id) }}"
-                    onsubmit="return confirm('Remover este lançamento?');">
-                <!-- preserva filtros no retorno -->
-                <input type="hidden" name="f_hospital_id" value="{{ f_hospital_id or '' }}">
-                <input type="hidden" name="f_procedure_id" value="{{ f_procedure_id or '' }}">
-                <input type="hidden" name="f_date_from" value="{{ f_date_from or '' }}">
-                <input type="hidden" name="f_date_to" value="{{ f_date_to or '' }}">
-                <button type="submit">Excluir</button>
-              </form>
-            </td>
+            <th style="min-width:110px">Data</th>
+            <th>Hospital</th>
+            <th>Procedimento</th> {# sem TUSS #}
+            <th class="text-end">Qtd</th>
+            <th class="text-end">Vlr Unit.</th>
+            <th class="text-end">Total</th>
+            <th>Obs.</th>
+            <th style="min-width:90px">Ações</th>
           </tr>
-        {% endfor %}
-      {% else %}
-        <tr><td colspan="8" class="muted">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>
-      {% endif %}
-    </tbody>
-  </table>
+        </thead>
+        <tbody>
+          {% if rows and rows|length %}
+            {% for r in rows %}
+              <tr>
+                <td>{{ brdate(r.exec_date) }}</td>
+                <td>{{ r.hospital_name }}</td>
+                <td>{{ r.procedure_name }}</td>
+                <td class="text-end">{{ r.quantity }}</td>
+                <td class="text-end">{{ '%.2f'|format(r.unit_price or 0) }}</td>
+                <td class="text-end">{{ '%.2f'|format(r.total or 0) }}</td>
+                <td class="text-muted">{{ r.note or '' }}</td>
+                <td>
+                  <form method="post"
+                        action="{{ url_for('doctor_production.delete_production', prod_id=r.id) }}"
+                        onsubmit="return confirm('Remover este lançamento?');">
+                    <input type="hidden" name="f_hospital_id" value="{{ f_hospital_id or '' }}">
+                    <input type="hidden" name="f_procedure_id" value="{{ f_procedure_id or '' }}">
+                    <input type="hidden" name="f_date_from" value="{{ f_date_from or '' }}">
+                    <input type="hidden" name="f_date_to" value="{{ f_date_to or '' }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Excluir</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="8" class="text-muted">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
-</body>
-</html>
+
+<!-- JS -->
+<script>
+  const AJAX_URL = "{{ url_for('doctor_production.ajax_procedures_by_hospital') }}";
+
+  async function loadProcedures(){
+    const hid = document.querySelector('select[name="hospital_id"]').value;
+    if(!hid) return;
+    try{
+      const url = `${AJAX_URL}?hospital_id=${encodeURIComponent(hid)}`;
+      const res = await fetch(url, { headers: { 'Accept':'application/json' }});
+      const data = await res.json();
+      if(!data.ok){ alert(data.error || "Erro ao carregar procedimentos"); return; }
+      document.querySelectorAll('select[name="procedure_id"]').forEach(sel=>{
+        const cur = sel.value;
+        sel.innerHTML = `<option value="">-- selecione --</option>`;
+        data.procedures.forEach(p=>{
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.label; // servidor já manda "Nome" (sem TUSS) ou "TUSS — Nome"
+          sel.appendChild(opt);
+        });
+        if(cur && Array.from(sel.options).some(o=>o.value===cur)) sel.value = cur;
+      });
+    }catch(e){
+      console.error(e); alert("Falha ao carregar procedimentos.");
+    }
+  }
+
+  function addRow(){
+    const tbody = document.getElementById('rows');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <select class="form-select" name="procedure_id" required>
+          <option value="">-- selecione --</option>
+        </select>
+      </td>
+      <td><input class="form-control" name="quantity" type="number" min="1" step="1" value="1" required></td>
+      <td><input class="form-control" name="note" placeholder="Observação (opcional)"></td>
+      <td><button type="button" class="btn btn-outline-secondary btn-sm" onclick="this.closest('tr').remove()">Remover</button></td>
+    `;
+    tbody.appendChild(tr);
+    loadProcedures();
+  }
+
+  function autoSubmitFilters(){
+    const f = document.getElementById('filterForm');
+    if(f) f.submit();
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const hospSel = document.querySelector('select[name="hospital_id"]');
+    if(hospSel){ hospSel.addEventListener('change', loadProcedures); }
+    document.getElementById('btnAdd').addEventListener('click', addRow);
+    addRow();         // cria a primeira linha
+    loadProcedures(); // pré-carrega procedimentos (se houver hospital selecionado)
+  });
+</script>
+
+{% endblock %}

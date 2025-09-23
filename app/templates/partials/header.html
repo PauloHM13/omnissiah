@@ -1,0 +1,19 @@
+<!-- Header da MedOptic -->
+<style>
+  /* Carrega a fonte Goldman (Google Fonts) */
+  @import url('https://fonts.googleapis.com/css2?family=Goldman:wght@400;700&display=swap');
+
+  .site-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; border-bottom:1px solid #eaeaea; margin-bottom:16px;
+    background:#ffffff; position:sticky; top:0; z-index:10;
+  }
+  .brand {
+    font-family:"Goldman", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-size:24px; letter-spacing:.5px;
+  }
+  .brand a{ text-decoration:none; color:#111; }
+</style>
+<header class="site-header">
+  <div class="brand"><a href="{{ url_for('auth.dashboard') }}">MedOptic</a></div>
+</header>

@@ -1,21 +1,127 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <title>Dashboard — Médico</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
-    ul{line-height:1.9}
-  </style>
-</head>
-<body>
-  <h1>Bem-vindo, Dr(a). {{ session.get('username') }}</h1>
+{% extends "base_doctor.html" %}
+{% block doctor_title %}Dashboard Médico · MedOptic{% endblock %}
 
-  <ul>
-    <li><a href="{{ url_for('doctor_production.production_form') }}">Lançar / Consultar Produção</a></li>
-    <li><a href="{{ url_for('doctor_expenses.form') }}">Solicitar / Consultar Despesas</a></li>
-    <li><a href="{{ url_for('auth.change_password') }}">Alterar minha senha</a></li>
-    <li><a href="{{ url_for('auth.logout') }}">Sair</a></li>
-  </ul>
-</body>
-</html>
+{% block doctor_content %}
+
+<h1 class="h5 mb-4">Bem-vindo, Dr.(a) {{ doctor_name }}</h1>
+
+{# Total de procedimentos: usa totals.procedures se vier do service;
+   caso não venha, cai para procedures_total; se ainda assim não vier,
+   soma as quantidades do breakdown. #}
+{% set total_proc =
+  (totals.procedures
+    if totals is defined and totals and totals.procedures is not none
+    else (
+      procedures_total
+        if procedures_total is defined and procedures_total is not none
+        else (procedures_breakdown|default([])|sum(attribute='qty', start=0))
+    )
+  )
+%}
+
+<!-- KPIs -->
+<div class="row g-3">
+  <div class="col-12 col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Hospitais em que atua</div>
+        <div class="fs-3 fw-semibold">{{ hospitals_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Procedimentos realizados (total)</div>
+        <div class="fs-3 fw-semibold">{{ total_proc }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small">Ano</div>
+        <div class="fs-3 fw-semibold">{{ year }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Seus hospitais -->
+<div class="card shadow-sm mt-4">
+  <div class="card-body">
+    <h2 class="h6 mb-2">Seus hospitais</h2>
+    {% if hospitals and hospitals|length %}
+      <ul class="mb-0">
+        {% for h in hospitals %}
+          <li>{{ h.name }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <span class="text-muted">Nenhum hospital vinculado.</span>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Produção recente -->
+<div class="card shadow-sm mt-3">
+  <div class="card-body">
+    <h2 class="h6 mb-3">Produção recente</h2>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Hospital</th>
+            <th style="min-width:110px">Execução</th>
+            <th>Procedimento</th>
+            <th class="text-end">Qtd</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent and recent|length %}
+            {% for r in recent %}
+              <tr>
+                <td>{{ r.hospital_name }}</td>
+                <td>{{ r.exec_date|br_date }}</td>
+                <td>{{ r.procedure_name }}</td>
+                <td class="text-end">{{ r.quantity }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="4" class="text-muted">Sem lançamentos recentes.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Gráfico mensal -->
+<div class="card shadow-sm mt-3">
+  <div class="card-body">
+    <h2 class="h6 mb-3">Procedimentos por mês — {{ year }}</h2>
+    <canvas id="chartMonthly" height="110"></canvas>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const dataSeries = {{ monthly|tojson }};
+  const ctx = document.getElementById('chartMonthly');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{ data: dataSeries, label: 'Procedimentos', borderWidth: 1 }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+</script>
+
+{% endblock %}

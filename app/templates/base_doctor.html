@@ -1,0 +1,102 @@
+<!-- app/templates/base_doctor.html -->
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block doctor_title %}MedOptic{% endblock %}</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Goldman:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    .brand{font-family:"Goldman",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.4px}
+    body{background:#f6f7f9}
+    /* Removido width fixo; deixa a coluna controlar a largura */
+    .sidebar .list-group-item{border:0;border-radius:10px;margin:.15rem 0}
+    .sidebar .list-group-item.active{background:#e9f2ff;color:#0a58ca}
+    footer.site-footer{font-size:.875rem;color:#555;background:#fafafa;border-top:1px solid #eee}
+  </style>
+</head>
+<body>
+  <!-- topo -->
+  <nav class="navbar bg-white border-bottom sticky-top">
+    <div class="container-xxl">
+      <a class="navbar-brand brand" href="{{ url_for('auth.dashboard') }}">MedOptic</a>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('auth.change_password') }}">Alterar senha</a>
+        <a class="btn btn-outline-danger btn-sm" href="{{ url_for('auth.logout') }}">Sair</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-xxl my-3">
+    <div class="row g-3">
+      <!-- menu lateral -->
+      <div class="col-12 col-md-3 col-lg-2">
+        <!-- wrapper sticky recomendado pelo Bootstrap -->
+        <div class="position-sticky" style="top: 76px;">
+          <div class="sidebar">
+            <div class="list-group">
+              <a class="list-group-item {{ 'active' if request.endpoint=='auth.dashboard' }}"
+                 href="{{ url_for('auth.dashboard') }}">
+                🏠 Dashboard
+              </a>
+
+              <!-- Produção -->
+              <div class="list-group-item bg-transparent p-0 border-0">
+                <div class="fw-semibold px-2 mt-2 mb-1 text-muted small">Produção</div>
+                <a class="list-group-item {{ 'active' if request.endpoint=='doctor_production.production_submit' }}"
+                   href="{{ url_for('doctor_production.production_submit') }}">
+                  ➕ Lançar produção
+                </a>
+              </div>
+
+              <!-- Despesas -->
+              <div class="list-group-item bg-transparent p-0 border-0">
+                <div class="fw-semibold px-2 mt-3 mb-1 text-muted small">Despesas</div>
+                <a class="list-group-item {{ 'active' if request.endpoint=='doctor_expenses.submit' }}"
+                   href="{{ url_for('doctor_expenses.submit') }}">
+                  ➕ Lançar despesa
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- conteúdo -->
+      <div class="col-12 col-md-9 col-lg-10">
+        {% with msgs = get_flashed_messages(with_categories=true) %}
+          {% if msgs %}
+            <div class="mb-2">
+              {% for cat,msg in msgs %}
+                <div class="alert {{ 'alert-success' if cat=='ok' else 'alert-danger' }} py-2 mb-2">{{ msg }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block doctor_content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer py-3 border-top bg-white">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center small">
+        <div class="text-muted">
+        Medoptic Partners Ltda – CNPJ: 43.329.419/0001-02 | Rua Azaleia, 399 - Chacara Floresta, Botucatu - SP.
+        </div>
+        <div class="d-flex gap-3">
+        <a href="{{ url_for('auth.privacy') }}" class="link-secondary text-decoration-none">
+            Política de Privacidade
+        </a>
+        <a href="{{ url_for('auth.privacy_internal') }}" class="link-secondary text-decoration-none">
+            Aviso de Privacidade Interno
+        </a>
+        </div>
+    </div>
+    </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

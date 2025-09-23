@@ -1,52 +1,87 @@
-<!doctype html>
-<html lang="pt-br"><head><meta charset="utf-8"><title>{{ 'Novo' if mode=='new' else 'Editar' }} Procedimento</title>
-<style>
-body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
-.wrap{max-width:800px;margin:0 auto}
-fieldset{border:1px solid #ccc;padding:16px;margin-bottom:18px;border-radius:6px}
-legend{font-weight:600;padding:0 6px}
-label{display:block;margin:6px 0 4px}
-input,select{width:100%;padding:8px;box-sizing:border-box}
-.ok{color:#2e7d32}.err{color:#b00020}
-</style></head>
-<body>
-<div class="wrap">
-  <h1>{{ 'Novo' if mode=='new' else 'Editar' }} Procedimento</h1>
-  <p><a href="{{ url_for('admin_procedures.list_procedures') }}">Voltar</a></p>
+{% extends "base.html" %}
+{% block title %}{{ 'Novo' if mode=='new' else 'Editar' }} procedimento · MedOptic{% endblock %}
 
-  {% with msgs = get_flashed_messages(with_categories=true) %}
-    {% if msgs %}<ul>{% for cat,msg in msgs %}<li class="{{ 'ok' if cat=='ok' else 'err' }}">{{ msg }}</li>{% endfor %}</ul>{% endif %}
-  {% endwith %}
-  {% if error %}<p class="err">{{ error }}</p>{% endif %}
-  {% if msg %}<p class="ok">{{ msg }}</p>{% endif %}
-
-  <form method="post">
-    <fieldset>
-      <legend>Dados do procedimento</legend>
-      <label>Código TUSS/SIGTAP</label>
-      <input name="tuss_code" value="{{ proc.tuss_code if proc else '' }}" required>
-      <label>Nome</label>
-      <input name="name" value="{{ proc.name if proc else '' }}" required>
-      <label>Unidade de cobrança</label>
-      {% set cu = proc.charge_unit if proc else '' %}
-      <select name="charge_unit" required>
-        <option value="unit"   {{ 'selected' if cu=='unit' else '' }}>unit</option>
-        <option value="hour"   {{ 'selected' if cu=='hour' else '' }}>hour</option>
-        <option value="day"    {{ 'selected' if cu=='day' else '' }}>day</option>
-        <option value="package"{{ 'selected' if cu=='package' else '' }}>package</option>
-      </select>
-      <label>Grupo</label>
-      <input name="grp" value="{{ proc.grp if proc else '' }}">
-      <label>Código interno (opcional)</label>
-      <input name="internal_code" value="{{ proc.internal_code if proc else '' }}">
-      <label>Valor SUS (referência)</label>
-      <input name="valor_sus" type="text"
-             value="{{ ('%.2f'|format(proc.valor_sus)) if (proc and proc.valor_sus is not none) else '' }}">
-      {% if mode=='edit' %}
-      <label><input type="checkbox" name="active" {{ 'checked' if proc.active else '' }}> Ativo</label>
-      {% endif %}
-    </fieldset>
-    <button type="submit">{{ 'Criar' if mode=='new' else 'Salvar' }}</button>
-  </form>
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">{{ 'Novo procedimento' if mode=='new' else 'Editar procedimento' }}</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin_procedures.list_procedures') }}">Voltar</a>
 </div>
-</body></html>
+
+{% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+{% if msg %}
+  <div class="alert alert-success">{{ msg }}</div>
+{% endif %}
+
+<form method="post" class="card shadow-sm">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-12 col-md-4">
+        <label class="form-label">Código TUSS</label>
+        <input name="tuss_code" class="form-control"
+               placeholder="Ex.: 20103012"
+               value="{{ procedure.tuss_code if procedure else '' }}">
+      </div>
+
+      <div class="col-12 col-md-8">
+        <label class="form-label">Nome do procedimento</label>
+        <input name="name" class="form-control"
+               placeholder="Digite o nome"
+               value="{{ procedure.name if procedure else '' }}" required>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Unidade de cobrança</label>
+        <select name="charge_unit" class="form-select" required>
+            <option value="">-- selecione --</option>
+            <option value="unit"    {{ 'selected' if procedure and procedure.charge_unit=='unit' else '' }}>Procedimento (unit)</option>
+            <option value="hour"    {{ 'selected' if procedure and procedure.charge_unit=='hour' else '' }}>Hora (hour)</option>
+            <option value="day"     {{ 'selected' if procedure and procedure.charge_unit=='day' else '' }}>Diária (day)</option>
+            <option value="package" {{ 'selected' if procedure and procedure.charge_unit=='package' else '' }}>Pacote (package)</option>
+        </select>
+        <div class="form-text">Usamos códigos fixos exigidos pelo banco: unit, hour, day, package.</div>
+      </div>
+
+      <div class="col-12 col-md-3">
+        <label class="form-label">Código interno (opcional)</label>
+        <input name="internal_code" class="form-control"
+               value="{{ procedure.internal_code if procedure else '' }}">
+      </div>
+
+      <div class="col-12 col-md-3">
+        <label class="form-label">Grupo (opcional)</label>
+        <input name="grp" class="form-control"
+               placeholder="Ex.: Oftalmo"
+               value="{{ procedure.grp if procedure else '' }}">
+      </div>
+
+      <!-- >>> NOVO CAMPO: Valor SUS (Referência) <<< -->
+      <div class="col-12 col-md-3">
+        <label class="form-label">Valor SUS (referência)</label>
+        <input name="valor_sus" class="form-control"
+               placeholder="Ex.: 123,45"
+               value="{{ procedure.valor_sus if procedure and procedure.valor_sus is not none else '' }}">
+        <div class="form-text">Opcional; apenas referência. Use vírgula ou ponto.</div>
+      </div>
+
+      {% if mode == 'edit' %}
+      <div class="col-12 col-md-3 d-flex align-items-end">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="activeSwitch"
+                 name="active" {{ 'checked' if (procedure and procedure.active) else '' }}>
+          <label class="form-check-label" for="activeSwitch">Ativo</label>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card-footer d-flex gap-2">
+    <button class="btn btn-primary" type="submit">
+      {{ 'Criar procedimento' if mode=='new' else 'Salvar alterações' }}
+    </button>
+    <a class="btn btn-outline-secondary" href="{{ url_for('admin_procedures.list_procedures') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% set ep = request.endpoint or '' %}
+<div class="list-group">
+  <a class="list-group-item list-group-item-action {{ 'active' if ep=='auth.dashboard' else '' }}"
+     href="{{ url_for('auth.dashboard') }}">📊 Dashboard</a>
+
+  <a class="list-group-item list-group-item-action {{ 'active' if ep.startswith('admin_users.') else '' }}"
+     href="{{ url_for('admin_users.list_users') }}">👤 Usuários</a>
+
+  <a class="list-group-item list-group-item-action {{ 'active' if ep.startswith('admin_hospitals.') else '' }}"
+     href="{{ url_for('admin_hospitals.list_hospitals') }}">🏥 Hospitais</a>
+
+  <a class="list-group-item list-group-item-action {{ 'active' if ep.startswith('admin_procedures.') else '' }}"
+     href="{{ url_for('admin_procedures.list_procedures') }}">🧾 Procedimentos</a>
+
+  <a class="list-group-item list-group-item-action {{ 'active' if ep.startswith('admin_productions.') else '' }}"
+     href="{{ url_for('admin_productions.list_all') }}">📈 Produção (relatório)</a>
+
+  <a class="list-group-item list-group-item-action {{ 'active' if ep.startswith('admin_expenses.') else '' }}"
+     href="{{ url_for('admin_expenses.list_all') }}">💸 Despesas (todos)</a>
+</div>

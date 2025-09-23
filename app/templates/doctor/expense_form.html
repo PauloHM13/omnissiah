@@ -1,170 +1,165 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <title>Solicitar Despesas</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px}
-    .wrap{max-width:1000px;margin:0 auto}
-    fieldset{border:1px solid #ccc;padding:16px;margin-bottom:18px;border-radius:6px}
-    legend{font-weight:600;padding:0 6px}
-    label{display:block;margin:6px 0 4px}
-    input,textarea{padding:8px;box-sizing:border-box}
-    table{border-collapse:collapse;width:100%}
-    th,td{border:1px solid #ddd;padding:8px}
-    th{background:#f7f7f7;text-align:left}
-    .actions{margin-top:10px;display:flex;gap:8px;align-items:center}
-    .ok{color:#2e7d32}.err{color:#b00020}.muted{color:#666}
-    td.amount, th.amount{ text-align:right }
-  </style>
-  <script>
-    function brlMask(el){
-      let v = (el.value || "").replace(/\D/g, "");
-      if (v === "") { el.value = ""; return; }
-      while (v.length < 3) v = "0" + v;
-      v = v.replace(/(\d+)(\d{2})$/, "$1,$2");
-      v = v.replace(/^0+(\d)/, "$1");
-      el.value = v;
-    }
-    function wireMoneyInputs(){
-      document.querySelectorAll('input[name="amount"]').forEach(inp=>{
-        inp.setAttribute('inputmode','decimal');
-        inp.placeholder = "0,00";
-        inp.addEventListener('input', ()=>brlMask(inp));
-        inp.addEventListener('blur',  ()=>brlMask(inp));
-      });
-    }
-    function addRow(){
-      const tbody = document.getElementById('rows');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="width:24%"><input name="city" required placeholder="Cidade destino"></td>
-        <td class="amount" style="width:12%"><input name="amount" required placeholder="0,00" inputmode="decimal"></td>
-        <td style="width:34%"><input name="description" placeholder="Descrição / justificativa"></td>
-        <td style="width:20%"><input type="file" name="receipt" accept=".pdf,image/*"></td>
-        <td style="width:10%"><button type="button" onclick="this.closest('tr').remove()">Remover</button></td>
-      `;
-      tbody.appendChild(tr);
-      wireMoneyInputs();
-    }
-    document.addEventListener('DOMContentLoaded', ()=>{
-      addRow(); wireMoneyInputs();
-      document.getElementById('btnAdd').addEventListener('click', addRow);
-    });
-  </script>
-</head>
-<body>
-<div class="wrap">
-  <h1>Solicitar Despesas</h1>
-  <p><a href="{{ url_for('auth.dashboard') }}">Voltar</a></p>
+{% extends "base_doctor.html" %}
+{% block doctor_title %}Solicitar Despesas · MedOptic{% endblock %}
 
-  {% with msgs = get_flashed_messages(with_categories=true) %}
-    {% if msgs %}<ul>{% for cat,msg in msgs %}<li class="{{ 'ok' if cat=='ok' else 'err' }}">{{ msg }}</li>{% endfor %}</ul>{% endif %}
-  {% endwith %}
+{% block doctor_content %}
 
-  <form method="post" enctype="multipart/form-data" action="{{ url_for('doctor_expenses.submit') }}">
-    <fieldset>
-      <legend>Dados principais</legend>
-      <label>Data de solicitação</label>
-      <input type="date" name="request_date" required>
-    </fieldset>
+<h1 class="h5 mb-3">Solicitar Despesas</h1>
 
-    <fieldset>
-      <legend>Itens de despesa</legend>
-      <table>
-        <thead>
+<form method="post" enctype="multipart/form-data" action="{{ url_for('doctor_expenses.submit') }}">
+  <!-- Dados principais -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Dados principais</h2>
+      <div class="row g-3">
+        <div class="col-12 col-sm-6 col-md-4">
+          <label class="form-label">Data de solicitação</label>
+          <input type="date" class="form-control" name="request_date" required>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Itens de despesa -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h6 mb-0">Itens de despesa</h2>
+        <button type="button" id="btnAdd" class="btn btn-sm btn-outline-primary">+ Adicionar linha</button>
+      </div>
+
+      <div class="alert alert-info py-2 mb-3">
+        Envie o comprovante para <strong>alexandre.soares@usyou.com.br</strong>.
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="min-width:190px">Cidade destino</th>
+              <th class="text-end" style="width:140px">Valor (R$)</th>
+              <th>Descrição / justificativa</th>
+              <th style="width:80px"></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-4">
+    <button type="submit" class="btn btn-primary">Enviar</button>
+  </div>
+</form>
+
+<!-- Histórico / Filtros -->
+<h2 class="h6 mt-4 mb-2">Minhas solicitações</h2>
+<form id="filters" method="get" action="{{ url_for('doctor_expenses.form') }}">
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-sm-4 col-md-3">
+          <label class="form-label">Data inicial</label>
+          <input type="date" class="form-control" name="f_date_from" value="{{ f_date_from }}">
+        </div>
+        <div class="col-12 col-sm-4 col-md-3">
+          <label class="form-label">Data final</label>
+          <input type="date" class="form-control" name="f_date_to" value="{{ f_date_to }}">
+        </div>
+        <div class="col-12 col-sm-4 col-md-4">
+          <label class="form-label">Cidade (contém)</label>
+          <input class="form-control" name="f_city" value="{{ f_city or '' }}">
+        </div>
+        <div class="col-12 col-md-2 d-flex gap-2 mt-2 mt-md-0">
+          <button type="submit" class="btn btn-primary flex-fill">Filtrar</button>
+          <a class="btn btn-outline-secondary flex-fill" href="{{ url_for('doctor_expenses.form') }}">Limpar</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<!-- Tabela de solicitações -->
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light">
           <tr>
-            <th>Cidade destino</th>
-            <th class="amount">Valor (R$)</th>
-            <th>Descrição/Justificativa</th>
-            <th>Comprovante (PDF/Imagem)</th>
-            <th></th>
+            <th style="min-width:110px">Data</th>
+            <th>Cidade</th>
+            <th class="text-end" style="width:130px">Valor (R$)</th>
+            <th>Descrição</th>
+            <th style="width:110px">Ações</th>
           </tr>
         </thead>
-        <tbody id="rows"></tbody>
+        <tbody>
+          {% if rows %}
+            {% for r in rows %}
+              <tr>
+                <td>{{ r.request_date|br_date }}</td>
+                <td>{{ r.city }}</td>
+                <td class="text-end">
+                  {{ ('{:,.2f}'.format(r.amount or 0)).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                </td>
+                <td>{{ r.description or '' }}</td>
+                <td>
+                  <form method="post"
+                        action="{{ url_for('doctor_expenses.delete', expense_id=r.id) }}"
+                        onsubmit="return confirm('Remover esta solicitação?');">
+                    <input type="hidden" name="f_date_from" value="{{ f_date_from or '' }}">
+                    <input type="hidden" name="f_date_to" value="{{ f_date_to or '' }}">
+                    <input type="hidden" name="f_city" value="{{ f_city or '' }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="5" class="text-muted">Nenhum registro para os filtros selecionados.</td></tr>
+          {% endif %}
+        </tbody>
       </table>
-      <div class="actions">
-        <button type="button" id="btnAdd">+ Adicionar linha</button>
-      </div>
-    </fieldset>
-
-    <div class="actions">
-      <button type="submit">Enviar</button>
     </div>
-  </form>
-
-  <hr>
-  <h2>Minhas solicitações</h2>
-  <form id="filters" method="get" action="{{ url_for('doctor_expenses.form') }}">
-    <fieldset>
-      <legend>Filtros</legend>
-      <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px">
-        <div>
-          <label>Data inicial</label>
-          <input type="date" name="f_date_from" value="{{ f_date_from }}">
-        </div>
-        <div>
-          <label>Data final</label>
-          <input type="date" name="f_date_to" value="{{ f_date_to }}">
-        </div>
-        <div>
-          <label>Cidade (contém)</label>
-          <input name="f_city" value="{{ f_city or '' }}">
-        </div>
-      </div>
-      <div class="actions">
-        <button type="submit">Filtrar</button>
-        <a href="{{ url_for('doctor_expenses.form') }}">Limpar</a>
-      </div>
-    </fieldset>
-  </form>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Data</th>
-        <th>Cidade</th>
-        <th class="amount">Valor (R$)</th>
-        <th>Descrição</th>
-        <th>Comprovantes</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% if rows %}
-        {% for r in rows %}
-          <tr>
-            <td>{{ r.request_date }}</td>
-            <td>{{ r.city }}</td>
-            <td class="amount">{{ ('%.2f'|format(r.amount or 0)).replace('.', ',') }}</td>
-            <td>{{ r.description or '' }}</td>
-            <td>
-              {% set fl = files_map.get(r.id, []) %}
-              {% if fl %}
-                {% for f in fl %}
-                  <div><a href="{{ url_for('doctor_expenses.download', expense_id=r.id, file_id=f.id) }}">{{ f.orig_name }}</a></div>
-                {% endfor %}
-              {% else %}
-                <span class="muted">—</span>
-              {% endif %}
-            </td>
-            <td>
-              <form method="post"
-                    action="{{ url_for('doctor_expenses.delete', expense_id=r.id) }}"
-                    onsubmit="return confirm('Remover esta solicitação?');">
-                <input type="hidden" name="f_date_from" value="{{ f_date_from or '' }}">
-                <input type="hidden" name="f_date_to" value="{{ f_date_to or '' }}">
-                <input type="hidden" name="f_city" value="{{ f_city or '' }}">
-                <button type="submit">Excluir</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      {% else %}
-        <tr><td colspan="6" class="muted">Nenhum registro para os filtros selecionados.</td></tr>
-      {% endif %}
-    </tbody>
-  </table>
+  </div>
 </div>
-</body>
-</html>
+
+<!-- Scripts -->
+<script>
+  // Máscara BRL simples (exibe 0,00, 10,00, 123,45, etc.)
+  function brlMask(el){
+    let v = (el.value || "").replace(/\D/g, "");
+    if (v === "") { el.value = ""; return; }
+    while (v.length < 3) v = "0" + v;
+    v = v.replace(/(\d+)(\d{2})$/, "$1,$2");
+    v = v.replace(/^0+(\d)/, "$1");
+    el.value = v;
+  }
+  function wireMoneyInputs(){
+    document.querySelectorAll('input[name="amount"]').forEach(inp=>{
+      inp.setAttribute('inputmode','decimal');
+      inp.placeholder = "0,00";
+      inp.addEventListener('input', ()=>brlMask(inp));
+      inp.addEventListener('blur',  ()=>brlMask(inp));
+    });
+  }
+  function addRow(){
+    const tbody = document.getElementById('rows');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input name="city" class="form-control" required placeholder="Cidade destino"></td>
+      <td class="text-end"><input name="amount" class="form-control text-end" required placeholder="0,00" inputmode="decimal"></td>
+      <td><input name="description" class="form-control" placeholder="Descrição / justificativa"></td>
+      <td><button type="button" class="btn btn-sm btn-outline-secondary" onclick="this.closest('tr').remove()">Remover</button></td>
+    `;
+    tbody.appendChild(tr);
+    wireMoneyInputs();
+  }
+  document.addEventListener('DOMContentLoaded', ()=>{
+    addRow();
+    wireMoneyInputs();
+    document.getElementById('btnAdd').addEventListener('click', addRow);
+  });
+</script>
+
+{% endblock %}

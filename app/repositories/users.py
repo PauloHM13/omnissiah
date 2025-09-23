@@ -117,3 +117,24 @@ class UserRepository:
                 (new_password, user_id),
             )
             return True
+
+    def update_password(self, user_id: int, new_password: str, clear_flag: bool = True) -> bool:
+        with get_conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE users
+                SET password_hash = crypt(%s, gen_salt('bf', 12)),
+                    must_change_password = CASE WHEN %s THEN FALSE ELSE must_change_password END
+                WHERE id = %s
+            RETURNING id;
+                """,
+                (new_password, clear_flag, user_id),
+            )
+            return bool(cur.fetchone())
+    
+    def set_privacy_accepted(self, user_id: int, accepted_at) -> None:
+        with get_conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE users SET privacy_accepted_at=%s WHERE id=%s;",
+                (accepted_at, user_id),
+            )

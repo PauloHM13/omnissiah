@@ -1,0 +1,30 @@
+{% extends "base_admin.html" %}
+{% block admin_title %}Editar preço{% endblock %}
+{% block admin_content %}
+<h1 class="h5 mb-3">Editar preço — {{ price.tuss_code }} · {{ price.name }}</h1>
+
+<form method="post">
+  <div class="row g-3">
+    <div class="col-md-3">
+      <label class="form-label">Preço (R$)</label>
+      <input name="price" class="form-control" value="{{ ('%.2f'|format(price.price or 0)).replace('.', ',') }}">
+      <div class="form-text">Use vírgula para centavos (ex.: 120,50)</div>
+    </div>
+    <div class="col-md-7">
+      <label class="form-label">Observação</label>
+      <input name="note" class="form-control" value="{{ price.note or '' }}">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="active" name="active" {% if price.active %}checked{% endif %}>
+        <label class="form-check-label" for="active">Ativo</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-3 d-flex gap-2">
+    <button class="btn btn-primary">Salvar</button>
+    <a class="btn btn-secondary" href="{{ url_for('admin_hospitals.edit_hospital', hospital_id=hospital_id) }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,40 +1,118 @@
-<!doctype html>
-<html lang="pt-br"><head><meta charset="utf-8"><title>Usuários</title></head>
-<body>
-<h1>Usuários</h1>
-<p><a href="{{ url_for('admin_users.new_user') }}">+ Novo usuário</a> | <a href="{{ url_for('auth.dashboard') }}">Voltar</a></p>
+{% extends "base.html" %}
+{% block title %}Usuários · MedOptic{% endblock %}
 
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h4 mb-0">Usuários</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin_users.new_user') }}">+ Novo usuário</a>
+</div>
 
-{% with msgs = get_flashed_messages(with_categories=true) %}
-{% if msgs %}
-<ul>{% for cat,msg in msgs %}<li style="color: {{ 'green' if cat=='ok' else 'red' }}">{{ msg }}</li>{% endfor %}</ul>
-{% endif %}
-{% endwith %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <!-- Filtro simples (cliente-side) -->
+    <div class="row g-2 align-items-center mb-3">
+      <div class="col-sm-6 col-lg-4">
+        <input id="q" class="form-control" placeholder="Filtrar por usuário, e-mail ou cidade…" oninput="filterTable()">
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <select id="roleFilter" class="form-select" onchange="filterTable()">
+          <option value="">Todos os papéis</option>
+          <option value="admin">Admin</option>
+          <option value="doctor">Médico</option>
+        </select>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <select id="statusFilter" class="form-select" onchange="filterTable()">
+          <option value="">Todos os status</option>
+          <option value="ativo">Ativo</option>
+          <option value="inativo">Inativo</option>
+        </select>
+      </div>
+    </div>
 
+    <div class="table-responsive">
+      <table class="table table-hover align-middle" id="usersTable">
+        <thead class="table-light">
+          <tr>
+            <th style="min-width:140px;">Usuário</th>
+            <th>E-mail</th>
+            <th>Papel</th>
+            <th>Status</th>
+            <th>Localidade</th>
+            <th>Criado em</th>
+            <th class="text-end" style="min-width:170px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for u in users %}
+          <tr data-username="{{ u.username|lower }}"
+              data-email="{{ u.email|lower }}"
+              data-role="{{ u.role }}"
+              data-status="{{ 'ativo' if u.is_active else 'inativo' }}"
+              data-city="{{ (u.city or '')|lower }}">
+            <td class="fw-medium">{{ u.username }}</td>
+            <td class="text-muted">{{ u.email }}</td>
+            <td>
+              {% if u.role == 'admin' %}
+                <span class="badge text-bg-secondary">Admin</span>
+              {% else %}
+                <span class="badge text-bg-info">Médico</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.is_active %}
+                <span class="badge text-bg-success">Ativo</span>
+              {% else %}
+                <span class="badge text-bg-danger">Inativo</span>
+              {% endif %}
+            </td>
+            <td class="text-muted">
+              {{ u.city or '-' }}{% if u.state %} / {{ u.state }}{% endif %}
+            </td>
+            <td class="text-muted">
+              {{ (u.created_at|string)[:10] if u.created_at else '-' }}
+            </td>
+            <td class="text-end">
+              <div class="btn-group">
+                <a class="btn btn-sm btn-outline-primary"
+                   href="{{ url_for('admin_users.edit_user', user_id=u.id) }}">Editar</a>
 
-<table border="1" cellpadding="6" cellspacing="0">
-<tr>
-<th>ID</th><th>Usuário</th><th>E-mail</th><th>Papel</th><th>Ativo?</th><th>Must change?</th><th>Criado em</th><th>Ações</th>
-</tr>
-{% for u in users %}
-<tr>
-<td>{{ u.id }}</td>
-<td>{{ u.username }}</td>
-<td>{{ u.email }}</td>
-<td>{{ u.role }}</td>
-<td>{{ 'Sim' if u.is_active else 'Não' }}</td>
-<td>{{ 'Sim' if u.must_change_password else 'Não' }}</td>
-<td>{{ u.created_at }}</td>
-<td>
-<form method="post" action="{{ url_for('admin_users.reset_user', user_id=u.id) }}" style="display:inline" onsubmit="return confirm('Gerar nova senha provisória para {{u.username}}?')">
-<button type="submit">Resetar senha</button>
-</form>
-<a href="{{ url_for('admin_users.edit_user', user_id=u.id) }}">Editar</a>
-<form method="post" action="{{ url_for('admin_users.delete_user', user_id=u.id) }}" style="display:inline" onsubmit="return confirm('Excluir usuário {{u.username}}?')">
-<button type="submit">Excluir</button>
-</form>
-</td>
-</tr>
-{% endfor %}
-</table>
-</body></html>
+                <form class="d-inline" method="post"
+                      action="{{ url_for('admin_users.reset_user', user_id=u.id) }}"
+                      onsubmit="return confirm('Gerar nova senha provisória para {{ u.username }}?');">
+                  <button type="submit" class="btn btn-sm btn-outline-warning">Resetar senha</button>
+                </form>
+
+                <form class="d-inline" method="post"
+                      action="{{ url_for('admin_users.delete_user', user_id=u.id) }}"
+                      onsubmit="return confirm('Excluir usuário {{ u.username }}? Esta ação não pode ser desfeita.');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center text-muted py-4">Nenhum usuário encontrado.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterTable(){
+  const q = (document.getElementById('q').value || '').toLowerCase();
+  const role = document.getElementById('roleFilter').value;
+  const st = document.getElementById('statusFilter').value;
+
+  document.querySelectorAll('#usersTable tbody tr').forEach(tr=>{
+    const hitText = tr.dataset.username.includes(q) || tr.dataset.email.includes(q) || tr.dataset.city.includes(q);
+    const hitRole = !role || tr.dataset.role === role;
+    const hitStatus = !st || tr.dataset.status === st;
+
+    tr.style.display = (hitText && hitRole && hitStatus) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

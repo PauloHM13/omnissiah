@@ -1,130 +1,212 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <title>{{ 'Novo' if mode=='new' else 'Editar' }} Usuário</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px;}
-    .wrap{max-width:960px;margin:0 auto;}
-    fieldset{border:1px solid #ccc;padding:16px;margin-bottom:18px;border-radius:6px;}
-    legend{font-weight:600;padding:0 6px;}
-    label{display:block;margin:6px 0 4px;}
-    input,select{width:100%;padding:8px;box-sizing:border-box;}
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
-    .actions{display:flex;gap:12px;align-items:center;margin-top:8px}
-    .danger{color:#b00020}.success{color:#2e7d32}
-    .chk{display:flex;align-items:center;gap:8px;padding:6px 0}
-  </style>
-  <script>
-    function toggleDoctorFields(val){
-      var box=document.getElementById('doctorFields');
-      if(box) box.style.display=(val==='doctor')?'block':'none';
-    }
-    document.addEventListener('DOMContentLoaded', function(){
-      const roleSel=document.querySelector('select[name="role"]');
-      if(roleSel){
-        toggleDoctorFields(roleSel.value);
-        roleSel.addEventListener('change', e=>toggleDoctorFields(e.target.value));
-      }
-    });
-  </script>
-</head>
-<body>
-<div class="wrap">
-  <h1>{{ 'Novo' if mode=='new' else 'Editar' }} Usuário</h1>
-  <p><a href="{{ url_for('admin_users.list_users') }}">Voltar</a></p>
+{% extends "base.html" %}
+{% block title %}{{ 'Novo' if mode=='new' else 'Editar' }} Usuário · MedOptic{% endblock %}
 
-  {% if error %}<p class="danger">{{ error }}</p>{% endif %}
-  {% if msg %}<p class="success">{{ msg }}</p>{% endif %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h4 mb-0">{{ 'Novo' if mode=='new' else 'Editar' }} Usuário</h1>
+  <a class="btn btn-outline-secondary" href="{{ url_for('admin_users.list_users') }}">Voltar</a>
+</div>
 
-  <form method="post">
-    <fieldset>
-      <legend>Dados de acesso</legend>
-      <div class="grid">
-        <div>
-          <label for="role">Papel</label>
+{% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+{% if msg %}
+  <div class="alert alert-success">{{ msg }}</div>
+{% endif %}
+
+<form method="post" class="needs-validation" novalidate>
+  <!-- Dados de acesso -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Dados de acesso</h2>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Papel</label>
           {% set r = (user.role if user else '') %}
-          <select name="role" id="role" required>
+          <select name="role" class="form-select" required id="role">
             <option value="">-- selecione --</option>
             <option value="admin"  {{ 'selected' if r=='admin'  else '' }}>Admin</option>
             <option value="doctor" {{ 'selected' if r=='doctor' else '' }}>Médico</option>
           </select>
+          <div class="invalid-feedback">Selecione o papel.</div>
         </div>
-        <div></div>
-        <div>
-          <label>Usuário (login)</label>
-          <input name="username" value="{{ user.username if user else '' }}" required>
+        <div class="col-md-4">
+          <label class="form-label">Usuário (login)</label>
+          <input name="username" class="form-control" value="{{ user.username if user else '' }}" required>
+          <div class="invalid-feedback">Informe o usuário.</div>
         </div>
-        <div>
-          <label>E-mail</label>
-          <input name="email" type="email" value="{{ user.email if user else '' }}" required>
+        <div class="col-md-4">
+          <label class="form-label">E-mail</label>
+          <input name="email" type="email" class="form-control" value="{{ user.email if user else '' }}" required>
+          <div class="invalid-feedback">Informe um e-mail válido.</div>
         </div>
+
         {% if mode=='edit' %}
-        <div>
-          <label>Status</label>
-          <label><input type="checkbox" name="is_active" {{ 'checked' if user.is_active else '' }}> Ativo</label>
+        <div class="col-md-4">
+          <label class="form-label d-block">Status</label>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {{ 'checked' if user.is_active else '' }}>
+            <label class="form-check-label" for="is_active">Ativo</label>
+          </div>
         </div>
         {% endif %}
       </div>
-    </fieldset>
+    </div>
+  </div>
 
-    <fieldset>
-      <legend>Contato</legend>
-      <div class="grid">
-        <div>
-          <label>Telefone</label>
-          <input name="phone" value="{{ user.phone or '' }}">
+  <!-- Contato -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Contato</h2>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Telefone</label>
+          <input name="phone" class="form-control" value="{{ user.phone or '' }}">
         </div>
       </div>
-    </fieldset>
+    </div>
+  </div>
 
-    <fieldset>
-      <legend>Endereço</legend>
-      <div class="grid">
-        <div><label>CEP</label><input name="cep" value="{{ user.cep or '' }}"></div>
-        <div><label>Número</label><input name="number" value="{{ user.number or '' }}"></div>
-        <div style="grid-column:1/3"><label>Logradouro</label><input name="street" value="{{ user.street or '' }}"></div>
-        <div><label>Complemento</label><input name="complement" value="{{ user.complement or '' }}"></div>
-        <div><label>Bairro</label><input name="district" value="{{ user.district or '' }}"></div>
-        <div><label>Cidade</label><input name="city" value="{{ user.city or '' }}"></div>
-        <div><label>Estado (UF)</label><input name="state" maxlength="2" style="text-transform:uppercase" value="{{ user.state or '' }}"></div>
-      </div>
-    </fieldset>
-
-    <div id="doctorFields" style="display:none">
-      <fieldset>
-        <legend>Dados do Médico</legend>
-        <div class="grid">
-          <div style="grid-column:1/2"><label>Nome completo</label><input name="full_name" value="{{ (doc.full_name if doc else '') }}"></div>
-          <div><label>CRM</label><input name="crm" value="{{ (doc.crm if doc else '') }}"></div>
-          <div><label>RQE</label><input name="rqe" value="{{ (doc.rqe if doc else '') }}"></div>
-          <div><label>CPF</label><input name="cpf" value="{{ (doc.cpf if doc else '') }}"></div>
-          <div><label>RG</label><input name="rg" value="{{ (doc.rg if doc else '') }}"></div>
-          <div style="grid-column:1/3"><label>Especialidade</label><input name="specialty" value="{{ (doc.specialty if doc else '') }}"></div>
+  <!-- Endereço -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Endereço</h2>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">CEP</label>
+          <input name="cep" class="form-control" value="{{ user.cep or '' }}">
         </div>
-      </fieldset>
+        <div class="col-md-3">
+          <label class="form-label">Número</label>
+          <input name="number" class="form-control" value="{{ user.number or '' }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Logradouro</label>
+          <input name="street" class="form-control" value="{{ user.street or '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Complemento</label>
+          <input name="complement" class="form-control" value="{{ user.complement or '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Bairro</label>
+          <input name="district" class="form-control" value="{{ user.district or '' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Cidade</label>
+          <input name="city" class="form-control" value="{{ user.city or '' }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">UF</label>
+          <input name="state" maxlength="2" class="form-control text-uppercase" value="{{ user.state or '' }}">
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <!-- NOVO: Hospitais de atuação -->
-      <fieldset>
-        <legend>Hospitais de atuação</legend>
-        <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:8px">
-          {% set selected_ids = doc_hospital_ids or [] %}
-          {% for h in hospitals %}
-            <label class="chk">
-              <input type="checkbox" name="hospital_ids" value="{{ h.id }}"
+  <!-- Dados do Médico -->
+  <div class="card shadow-sm mb-3" id="doctorBox" style="display:none;">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Dados do Médico</h2>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nome completo</label>
+          <input name="full_name" class="form-control" value="{{ (doc.full_name if doc else '') }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">CRM</label>
+          <input name="crm" class="form-control" value="{{ (doc.crm if doc else '') }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">RQE</label>
+          <input name="rqe" class="form-control" value="{{ (doc.rqe if doc else '') }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">CPF</label>
+          <input name="cpf" class="form-control" value="{{ (doc.cpf if doc else '') }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">RG</label>
+          <input name="rg" class="form-control" value="{{ (doc.rg if doc else '') }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Especialidade</label>
+          <input name="specialty" class="form-control" value="{{ (doc.specialty if doc else '') }}">
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <!-- Dados da Empresa do Médico -->
+      <h3 class="h6 mb-3">Empresa do Médico</h3>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">CNPJ</label>
+          <input name="company_cnpj" class="form-control" placeholder="00.000.000/0000-00"
+                 value="{{ (doc.company_cnpj if doc and doc.company_cnpj is defined else '') }}">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Razão social</label>
+          <input name="company_name" class="form-control"
+                 value="{{ (doc.company_name if doc and doc.company_name is defined else '') }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">CRM da empresa</label>
+          <input name="company_crm" class="form-control"
+                 value="{{ (doc.company_crm if doc and doc.company_crm is defined else '') }}">
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <h2 class="h6 mb-2">Hospitais de atuação</h2>
+      <div class="row g-2">
+        {% set selected_ids = doc_hospital_ids or [] %}
+        {% for h in hospitals %}
+          <div class="col-md-6">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="hospital_ids" id="h{{ h.id }}" value="{{ h.id }}"
                      {% if h.id in selected_ids %}checked{% endif %}>
-              {{ h.nickname or h.trade_name or h.corporate_name }} (ID {{ h.id }})
-            </label>
-          {% endfor %}
-        </div>
-        <small>Selecione um ou mais hospitais onde este médico atua.</small>
-      </fieldset>
+              <label class="form-check-label" for="h{{ h.id }}">
+                {{ h.nickname or h.trade_name or h.corporate_name }}
+              </label>
+            </div>
+          </div>
+        {% endfor %}
+        {% if not hospitals %}
+          <div class="col-12"><div class="text-muted">Nenhum hospital cadastrado.</div></div>
+        {% endif %}
+      </div>
     </div>
+  </div>
 
-    <div class="actions">
-      <button type="submit">{{ 'Criar usuário' if mode=='new' else 'Salvar' }}</button>
-    </div>
-  </form>
-</div>
-</body>
-</html>
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary">Salvar</button>
+    <a class="btn btn-outline-secondary" href="{{ url_for('admin_users.list_users') }}">Cancelar</a>
+  </div>
+</form>
+
+<script>
+(function(){
+  const form = document.querySelector('.needs-validation');
+  if(form){
+    form.addEventListener('submit', function(e){
+      if(!form.checkValidity()){
+        e.preventDefault(); e.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    });
+  }
+
+  const roleSel = document.getElementById('role');
+  const box = document.getElementById('doctorBox');
+  function toggleDoctorBox(){
+    box.style.display = (roleSel.value === 'doctor') ? '' : 'none';
+  }
+  if(roleSel){
+    toggleDoctorBox();
+    roleSel.addEventListener('change', toggleDoctorBox);
+  }
+})();
+</script>
+{% endblock %}

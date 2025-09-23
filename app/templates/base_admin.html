@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{% if self.admin_title() %}{% block admin_title %}{% endblock %} · {% endif %}MedOptic{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <!-- Sidebar -->
+  <aside class="col-12 col-lg-2">
+    <div class="card shadow-sm">
+      <div class="card-body p-2">
+        {% include "admin/_sidebar.html" %}
+      </div>
+    </div>
+  </aside>
+
+  <!-- Conteúdo principal -->
+  <section class="col-12 col-lg-10">
+    {% block admin_content %}{% endblock %}
+  </section>
+</div>
+{% endblock %}
