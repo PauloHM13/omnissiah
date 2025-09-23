@@ -58,6 +58,9 @@ def create_app():
 
     app.jinja_env.filters["br_date"] = _br_date
     app.jinja_env.filters["br_datetime"] = _br_datetime
+
+    app.jinja_env.filters["brdate"] = _br_date
+    app.jinja_env.filters["brdatetime"] = _br_datetime
     # ------------------------------------------------------
 
     # Blueprints
