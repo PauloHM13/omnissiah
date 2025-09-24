@@ -5,6 +5,37 @@
 
 <h1 class="h5 mb-3">Solicitar Despesas</h1>
 
+{# --- Ajustes de responsividade específicos desta página --- #}
+<style>
+  /* Mantém números alinhados à direita */
+  th.amount, td.amount { text-align: right; }
+
+  /* Input do valor com largura confortável no desktop também */
+  .money-input {
+    width: 130px;           /* desktop */
+    max-width: 100%;
+    font-size: 16px;        /* evita zoom no iOS/Android */
+  }
+
+  /* Inputs das outras colunas (apenas para mobile refinado) */
+  .city-input  { }
+  .desc-input  { }
+
+  /* Melhorias de mobile */
+  @media (max-width: 576px) {
+    /* Dá mais “respiro” para a coluna do Valor */
+    th.amount, td.amount { min-width: 170px; }
+    .money-input { width: 170px; }
+
+    /* Um pouco mais de espaço p/ cidade e descrição, sem quebrar desktop */
+    .city-input { min-width: 180px; }
+    .desc-input { min-width: 240px; }
+
+    /* Afasta os botões da borda no mobile */
+    .table-actions { min-width: 96px; }
+  }
+</style>
+
 <form method="post" enctype="multipart/form-data" action="{{ url_for('doctor_expenses.submit') }}">
   <!-- Dados principais -->
   <div class="card shadow-sm mb-3">
@@ -36,9 +67,9 @@
           <thead class="table-light">
             <tr>
               <th style="min-width:190px">Cidade destino</th>
-              <th class="text-end" style="width:140px">Valor (R$)</th>
+              <th class="amount" style="width:140px">Valor (R$)</th>
               <th>Descrição / justificativa</th>
-              <th style="width:80px"></th>
+              <th class="table-actions" style="width:80px"></th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -88,7 +119,7 @@
           <tr>
             <th style="min-width:110px">Data</th>
             <th>Cidade</th>
-            <th class="text-end" style="width:130px">Valor (R$)</th>
+            <th class="amount" style="width:130px">Valor (R$)</th>
             <th>Descrição</th>
             <th style="width:110px">Ações</th>
           </tr>
@@ -99,7 +130,7 @@
               <tr>
                 <td>{{ r.request_date|br_date }}</td>
                 <td>{{ r.city }}</td>
-                <td class="text-end">
+                <td class="amount">
                   {{ ('{:,.2f}'.format(r.amount or 0)).replace(',', 'X').replace('.', ',').replace('X', '.') }}
                 </td>
                 <td>{{ r.description or '' }}</td>
@@ -139,6 +170,7 @@
     document.querySelectorAll('input[name="amount"]').forEach(inp=>{
       inp.setAttribute('inputmode','decimal');
       inp.placeholder = "0,00";
+      inp.classList.add('money-input', 'text-end');
       inp.addEventListener('input', ()=>brlMask(inp));
       inp.addEventListener('blur',  ()=>brlMask(inp));
     });
@@ -147,10 +179,18 @@
     const tbody = document.getElementById('rows');
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input name="city" class="form-control" required placeholder="Cidade destino"></td>
-      <td class="text-end"><input name="amount" class="form-control text-end" required placeholder="0,00" inputmode="decimal"></td>
-      <td><input name="description" class="form-control" placeholder="Descrição / justificativa"></td>
-      <td><button type="button" class="btn btn-sm btn-outline-secondary" onclick="this.closest('tr').remove()">Remover</button></td>
+      <td>
+        <input name="city" class="form-control city-input" required placeholder="Cidade destino">
+      </td>
+      <td class="amount">
+        <input name="amount" class="form-control money-input text-end" required placeholder="0,00" inputmode="decimal">
+      </td>
+      <td>
+        <input name="description" class="form-control desc-input" placeholder="Descrição / justificativa">
+      </td>
+      <td>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="this.closest('tr').remove()">Remover</button>
+      </td>
     `;
     tbody.appendChild(tr);
     wireMoneyInputs();
