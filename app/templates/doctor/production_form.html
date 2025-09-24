@@ -129,7 +129,7 @@
           {% if rows and rows|length %}
             {% for r in rows %}
               <tr>
-                <td>{{ r.exec_date|brdate }}</td>
+                <td>{{ r.exec_date|br_date }}</td>
                 <td>{{ r.hospital_name }}</td>
                 <td>{{ r.procedure_name }}</td>
                 <td class="text-end">{{ r.quantity }}</td>
@@ -179,7 +179,7 @@
         data.procedures.forEach(p=>{
           const opt = document.createElement('option');
           opt.value = p.id;
-          opt.textContent = p.label; // label já sem TUSS
+          opt.textContent = p.label; // label sem TUSS
           sel.appendChild(opt);
         });
         if (cur && Array.from(sel.options).some(o=>o.value===cur)) sel.value = cur;
