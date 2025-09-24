@@ -64,7 +64,9 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-body">
-    <form id="filterForm" class="row g-3 align-items-end" method="get" action="{{ url_for('doctor_production.production_form') }}">
+    <form id="filterForm" class="row g-3 align-items-end" method="get"
+          action="{{ url_for('doctor_production.production_form') }}">
+
       <div class="col-12 col-md-4">
         <label class="form-label">Unidade (hospital)</label>
         <select class="form-select" name="f_hospital_id" onchange="autoSubmitFilters()">
@@ -78,8 +80,13 @@
       </div>
 
       <div class="col-12 col-md-4">
-        <label class="form-label">Procedimento</label>
-        <select class="form-select" name="f_procedure_id">
+        <label class="form-label">
+          Procedimento
+          {% if not f_hospital_id %}
+            <span class="text-muted small">(Selecione um hospital para listar)</span>
+          {% endif %}
+        </label>
+        <select class="form-select" name="f_procedure_id" {{ '' if f_hospital_id else 'disabled' }}>
           <option value="">(todos)</option>
           {% for p in filter_procedures %}
             <option value="{{ p.procedure_id }}" {{ 'selected' if f_procedure_id==p.procedure_id else '' }}>
@@ -87,9 +94,6 @@
             </option>
           {% endfor %}
         </select>
-        {% if not f_hospital_id %}
-          <div class="form-text">Selecione um hospital para listar procedimentos neste filtro.</div>
-        {% endif %}
       </div>
 
       <div class="col-6 col-md-2">
