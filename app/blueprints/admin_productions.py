@@ -183,7 +183,7 @@ def export_xlsx():
     ws.title = "Produção"
 
     header = [
-        "Data", "Hospital", "Médico", "TUSS", "Procedimento",
+        "Data", "Hospital", "Médico", "Código", "Procedimento",
         "Quantidade", "Vlr Unit. (R$)", "Total (R$)", "Obs."
     ]
     ws.append(header)
